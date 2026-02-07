@@ -39,3 +39,5 @@ yarn-error.log*
 # VRM models (large files)
 # Uncomment if you want to exclude VRM files from git
 # public/models/*.vrm
+
+package-lock.json
