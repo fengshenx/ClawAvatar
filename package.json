@@ -3,10 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "main": "electron/main.mjs",
   "scripts": {
     "dev": "vite",
+    "dev:electron": "npx concurrently -k \"vite\" \"wait-on http://localhost:5173 && electron . --dev\"",
     "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "adapter": "node adapter/server.mjs",
+    "dev:all": "npx concurrently -n vite,adapter \"npm run dev\" \"npm run adapter\"",
+    "start": "electron .",
+    "build:electron": "npm run build && electron ."
   },
   "dependencies": {
     "@pixiv/three-vrm": "^3.4.0",
@@ -21,7 +27,11 @@
     "@types/react-dom": "^18.3.1",
     "@types/three": "^0.170.0",
     "@vitejs/plugin-react": "^4.3.4",
+    "concurrently": "^9.1.0",
+    "electron": "^33.2.0",
     "typescript": "~5.6.2",
-    "vite": "^6.0.1"
+    "vite": "^6.0.1",
+    "wait-on": "^8.0.1",
+    "ws": "^8.19.0"
   }
 }

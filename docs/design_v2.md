@@ -165,20 +165,21 @@
 - [ ] 状态切换在视觉上平滑过渡，无抽搐、无竞态导致的错乱。
 - [ ] 前端 UI 能展示连接状态（已连/未连/错误）；可选：保留本地按钮在未连接时仍可演示。
 - [ ] 协议与 V1 一致，便于 Step 3 将回放改为真实 OpenClaw 输出。
+- [ ] 动作动画：manifest 存在且含有效条目时，VRM 加载后能加载对应 VRMA 并支持按名称播放；与状态驱动无冲突。
 
 ---
 
-## 7. 与 V1 / Step 3 的衔接
+## 8. 与 V1 / Step 3 的衔接
 
 - **V1**：V2 在 V1 基础上增加 WS 客户端与「消息来源」抽象；状态机、mapping、engine 复用。
 - **Step 3**：将 Adapter 的「回放脚本」改为「接收 OpenClaw 输出并转发为 agent_state / render」；前端无需改协议与状态机，仅需适配鉴权与 session（若 Step 3 引入）。
 
 ---
 
-## 8. 文档与仓库
+## 9. 文档与仓库
 
 - 本文档：`docs/design_v2.md`，描述 Step 2 范围、WebSocket 接入与回放脚本、平滑过渡要求。
 - 上一版：`docs/design_v1.md`（本地演示 + 按钮模拟）。
 - Roadmap：`docs/roadmap.md` 中 Step 2（接入 WebSocket）为本版依据。
 
-以上为 ClawAvatar 第二版设计文档，聚焦「前端连 Adapter、Adapter 回放 typing → thinking → speaking、前端平滑过渡」。
+以上为 ClawAvatar 第二版设计文档，聚焦「前端连 Adapter、Adapter 回放 typing → thinking → speaking、前端平滑过渡」；并约定**动作动画**由 `public/animations/manifest.json` 配置，已实现加载 VRMA 与按名称播放，协议可扩展 `gesture`/`action` 按名触发。

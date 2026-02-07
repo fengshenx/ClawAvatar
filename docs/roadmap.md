@@ -324,7 +324,7 @@ app.whenReady().then(() => {
 
 ⸻
 
-10. MVP 里程碑（建议按 3 步落地）
+10. MVP 里程碑（建议按 4 步落地）
 
 10.1 Step 1：本地演示
 	•	Web 显示 VRM
@@ -337,10 +337,14 @@ app.whenReady().then(() => {
 	•	typing -> thinking -> speaking
 	•	前端实现平滑过渡
 
-10.3 Step 3：接 OpenClaw
+10.3 Step 3：Electron 桌面端
+	•	桌面壳（Electron）常驻
+	•	复用 Web Avatar（loadURL 或内嵌）
+	•	窗口置顶/贴边/点击穿透（可选）
+
+10.4 Step 4：接 OpenClaw
 	•	Avatar user_input -> OpenClaw Agent
 	•	Agent 输出 -> Adapter 包装成 render 与 agent_state
-	•	桌面壳（Electron）常驻
 
 ⸻
 

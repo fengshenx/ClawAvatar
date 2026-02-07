@@ -60,6 +60,20 @@ body {
   color: #94a3b8;
 }
 
+/* Electron 桌面端：顶部拖拽条 */
+.app__drag-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 28px;
+  z-index: 10;
+  -webkit-app-region: drag;
+  app-region: drag;
+  user-select: none;
+}
+
+/* 控制区与按钮在 Electron 中需设为 no-drag，否则无法点击 */
 .app__controls {
   position: absolute;
   bottom: 0;
@@ -67,6 +81,18 @@ body {
   right: 0;
   padding: 1rem 1.5rem;
   background: linear-gradient(transparent, rgba(15, 23, 42, 0.95));
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+.app__electron-hint {
+  position: absolute;
+  bottom: 0.25rem;
+  right: 0.5rem;
+  font-size: 10px;
+  color: rgba(148, 163, 184, 0.6);
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
 }
 
 .clip-buttons {
@@ -156,5 +182,82 @@ body {
 
 .demo-buttons button.secondary:hover {
   background: #1e293b;
+  color: #e2e8f0;
+}
+
+/* WebSocket 连接状态 */
+.connection-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.connection-status__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.connection-status__dot--idle {
+  background: #64748b;
+}
+
+.connection-status__dot--connecting,
+.connection-status__dot--reconnecting {
+  background: #fbbf24;
+  animation: connection-pulse 1s ease-in-out infinite;
+}
+
+.connection-status__dot--connected {
+  background: #22c55e;
+}
+
+.connection-status__dot--error {
+  background: #ef4444;
+}
+
+@keyframes connection-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+.connection-status__label {
+  font-weight: 500;
+}
+
+.connection-status__error {
+  color: #fca5a5;
+  font-size: 12px;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.connection-status__actions {
+  margin-left: auto;
+}
+
+.connection-status__btn {
+  padding: 0.25rem 0.6rem;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  background: #1e293b;
+  color: #94a3b8;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.connection-status__btn:hover {
+  background: #334155;
   color: #e2e8f0;
 }

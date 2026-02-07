@@ -1,6 +1,6 @@
 # ClawAvatar
 
-Web 端 VRM 形象展示与状态演示（V1：本地演示）。支持 idle / thinking / speaking 状态切换，通过按钮模拟事件协议，为后续接入 WebSocket 与 OpenClaw 打基础。
+Web 端 VRM 形象展示与状态演示。支持 idle / thinking / speaking 状态切换；V2 通过 WebSocket 连接 Avatar Channel Adapter，由 Adapter 回放测试脚本（typing → thinking → speaking），前端平滑过渡；无 Adapter 时仍可用本地按钮模拟协议（V1 行为）。
 
 ## 技术栈
 
@@ -38,6 +38,24 @@ src/
    ```
 
 4. 在浏览器中打开控制台提示的地址（通常为 `http://localhost:5173`）。
+
+## V2：WebSocket 连接 Adapter
+
+前端默认连接 `ws://localhost:8765/avatar`（可通过环境变量 `VITE_AVATAR_WS_URL` 覆盖，见 `.env.example`）。底部控制区会显示连接状态（已连 / 未连 / 错误 / 重连中），并可手动「连接」「断开」。
+
+**运行 Adapter 回放脚本（可选）**：在项目根目录执行：
+
+```bash
+npm run adapter
+```
+
+或**一条命令同时启动前端 + Adapter**（本地联调推荐）：
+
+```bash
+npm run dev:all
+```
+
+Adapter 会按顺序向前端推送：**typing** → **thinking** → **speaking** → **idle**，循环。Avatar 状态会随之平滑切换。未启动 Adapter 时，前端会显示未连接，仍可使用下方按钮本地模拟协议。
 
 ## 如何用按钮模拟协议事件
 
