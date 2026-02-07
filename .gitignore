@@ -43,3 +43,11 @@ yarn-error.log*
 package-lock.json
 tsconfig.tsbuildinfo
 public/models/avatar.glb
+public/animations/VRMA_01.vrma
+public/animations/VRMA_02.vrma
+public/animations/VRMA_03.vrma
+public/animations/VRMA_04.vrma
+public/animations/VRMA_05.vrma
+public/animations/VRMA_06.vrma
+public/animations/VRMA_07.vrma
+public/models/

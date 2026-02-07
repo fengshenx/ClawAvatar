@@ -69,6 +69,44 @@ body {
   background: linear-gradient(transparent, rgba(15, 23, 42, 0.95));
 }
 
+.clip-buttons {
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.clip-buttons__label {
+  margin-bottom: 0.5rem;
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.clip-buttons__row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.clip-buttons__btn {
+  padding: 0.4rem 0.75rem;
+  border: 1px solid #475569;
+  border-radius: 6px;
+  background: #0f172a;
+  color: #94a3b8;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.clip-buttons__btn:hover {
+  background: #1e293b;
+  color: #e2e8f0;
+  border-color: #64748b;
+}
+
+.clip-buttons + .demo-buttons {
+  margin-top: 0.75rem;
+}
+
 .demo-buttons {
   max-width: 480px;
   margin: 0 auto;

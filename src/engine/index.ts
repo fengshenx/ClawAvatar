@@ -5,13 +5,21 @@
 export { createScene, renderFrame, resizeRenderer, updateControls } from './renderer';
 export type { SceneContext, RendererOptions } from './renderer';
 export { loadVrm, attachVrmToGroup } from './loadVrm';
-export type { LoadVrmOptions } from './loadVrm';
+export type { LoadVrmOptions, LoadVrmResult } from './loadVrm';
+export { loadVrma } from './loadVrma';
+export type { GLTFWithVrmAnimations } from './loadVrma';
+export { setupClipAnimations } from './clipAnimations';
+export type { ClipAnimationsResult } from './clipAnimations';
+export { addVrmaClipsToMixer } from './vrmaClips';
+export type { VrmaEntry } from './vrmaClips';
 export {
   applyEmotion,
   applyLookAt,
   applyBlink,
   applyMouth,
   applyAnimationParams,
+  applyHeadBoneMotion,
+  periodicBlinkValue,
 } from './avatarRig';
 export {
   breathingOffset,

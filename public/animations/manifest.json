@@ -1,0 +1,11 @@
+{
+  "animations": [
+    { "name": "Show full body", "url": "/animations/VRMA_01.vrma" },
+    { "name": "Greeting", "url": "/animations/VRMA_02.vrma" },
+    { "name": "V sign", "url": "/animations/VRMA_03.vrma" },
+    { "name": "Shoot", "url": "/animations/VRMA_04.vrma" },
+    { "name": "Spin", "url": "/animations/VRMA_05.vrma" },
+    { "name": "Model pose", "url": "/animations/VRMA_06.vrma" },
+    { "name": "Squat", "url": "/animations/VRMA_07.vrma" }
+  ]
+}

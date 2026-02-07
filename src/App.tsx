@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react';
 import { useAvatarScene } from '@/hooks/useAvatarScene';
 import { DemoButtons } from '@/ui/DemoButtons';
+import { ClipButtons } from '@/ui/ClipButtons';
 
 function useWindowSize() {
   const [size, setSize] = useState({ width: window.innerWidth, height: window.innerHeight });
@@ -19,7 +20,7 @@ function useWindowSize() {
 
 function App() {
   const { width, height } = useWindowSize();
-  const { canvasRef, loading, error } = useAvatarScene({
+  const { canvasRef, loading, error, clipNames, onPlayClip } = useAvatarScene({
     width,
     height,
   });
@@ -41,6 +42,7 @@ function App() {
         )}
       </div>
       <aside className="app__controls">
+        <ClipButtons clipNames={clipNames} onPlayClip={onPlayClip} />
         <DemoButtons />
       </aside>
     </div>
