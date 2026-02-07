@@ -64,10 +64,12 @@ export function useAvatarScene(options: UseAvatarSceneOptions) {
     ctxRef.current = ctx;
 
     loadVrm({ url: vrmUrl })
-      .then(({ vrm, gltf }) => {
+      .then(async ({ vrm, gltf }) => {
         if (disposed || loadSessionRef.current !== sessionId) return;
         vrmRef.current = vrm;
         attachVrmToGroup(vrm, ctx.avatarGroup);
+        // 避免首屏先看到 T-pose，等动作系统就绪后再显示
+        vrm.scene.visible = false;
         const result = setupClipAnimations(vrm, gltf);
         if (result) {
           mixerRef.current = result.mixer;
@@ -101,6 +103,9 @@ export function useAvatarScene(options: UseAvatarSceneOptions) {
           clipNamesRef.current = result.clipNames;
           actionsRef.current = result.actions;
           setClipNames([...result.clipNames]);
+          vrm.scene.visible = true;
+          setLoading(false);
+          void loadVrmaFromManifest(vrm);
         } else {
           mixerRef.current = null;
           playClipRef.current = null;
@@ -108,10 +113,11 @@ export function useAvatarScene(options: UseAvatarSceneOptions) {
           actionsRef.current = [];
           activeClipIndexRef.current = null;
           setClipNames([]);
+          await loadVrmaFromManifest(vrm);
+          if (disposed || loadSessionRef.current !== sessionId) return;
+          vrm.scene.visible = true;
+          setLoading(false);
         }
-        setLoading(false);
-
-        void loadVrmaFromManifest(vrm);
       })
       .catch((e) => {
         if (disposed || loadSessionRef.current !== sessionId) return;

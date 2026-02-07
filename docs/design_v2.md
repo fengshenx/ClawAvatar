@@ -14,6 +14,7 @@
 | 前端连 Adapter | 前端通过 WebSocket 连接至 Avatar Channel Adapter（独立服务），替代 V1 的本地按钮触发 |
 | Adapter 回放测试脚本 | Adapter 端实现或配置一段脚本，按顺序发送：**typing** → **thinking** → **speaking**（及可选 idle），用于联调与演示 |
 | 平滑过渡 | 前端对 `agent_state` / `render` 的切换做 easing，避免状态跳变导致动画抽搐；可沿用 V1 的 intensity 缓动 |
+| 动作动画（manifest + VRMA） | 前端已实现：从 `public/animations/manifest.json` 读取动作列表，加载对应 VRMA 并并入 Mixer，支持按名称播放；与状态驱动（idle/thinking/speaking）可并存，协议可扩展以按名触发动作 |
 
 ### 1.2 本版不包含的
 
@@ -88,18 +89,50 @@
 
 ---
 
-## 4. 技术方案
+## 4. 动作动画（manifest + VRMA）
 
-### 4.1 前端变更点（相对 V1）
+### 4.1 资源与格式
+
+- **路径**：`public/animations/manifest.json`（前端请求 `/animations/manifest.json`）。
+- **格式**：
+
+```json
+{
+  "animations": [
+    { "name": "Show full body", "url": "/animations/VRMA_01.vrma" },
+    { "name": "Greeting", "url": "/animations/VRMA_02.vrma" }
+  ]
+}
+```
+
+- **约定**：`name` 用于展示与按名播放；`url` 为相对 public 的路径，指向单个 VRMA 文件。
+
+### 4.2 前端行为（已实现）
+
+- VRM 加载完成后，请求 manifest，按 `url` 依次加载 VRMA（通过 `@pixiv/three-vrm-animation` 等），将解析出的 VRMAnimation 转为 Three.js AnimationClip，加入与模型共用的 **AnimationMixer**。
+- 动作与状态驱动（idle/thinking/speaking）共用同一 Mixer：状态驱动控制表情/视线/呼吸等；manifest 中的动作为可选的「按名称播放」片段（如 Greeting、V sign）。
+- 支持 **按名称播放**：给定 manifest 中某条的 `name`，可调用播放接口切换当前动作；播放结束后可回落至状态驱动或 idle。
+
+### 4.3 与协议的衔接（可选扩展）
+
+- 若 Adapter 或 Step 3 需要触发「指定动作」，可在 `render` 或 `agent_state` 中增加可选字段，例如 `gesture` 或 `action`，取值为 manifest 中某条的 `name`；前端收到后按名播放该动作，播完再恢复状态驱动。
+- V2 回放脚本可不带 gesture/action，仅用 state 流（typing → thinking → speaking）；动作动画由本地 UI 或后续协议扩展触发。
+
+---
+
+## 5. 技术方案
+
+### 5.1 前端变更点（相对 V1）
 
 | 模块 | 变更 |
 |------|------|
 | 协议/网络 | 新增 **WS 客户端**：建立连接、订阅消息、断线重连（可选在本版做基础版） |
 | 协议/消费 | 将 **WebSocket 收到的 JSON 视为 ProtocolMessage**，调用 V1 的 `applyProtocolMessage`，驱动现有状态机 |
 | 状态机 / mapping | **复用 V1**；若有 `typing`/`listening`，在 mapping 中映射为 idle 或新状态表现 |
-| UI | 保留 V1 的演示按钮可用于「无 Adapter 时回退」；新增 **连接状态**（已连/未连/重连中）、可选「开始回放」按钮（若 Adapter 支持） |
+| 动作动画 | **已实现**：按 `public/animations/manifest.json` 加载 VRMA，并入 Mixer，支持按名称播放；与状态驱动并存，协议可扩展 `gesture`/`action` 按名触发 |
+| UI | 保留 V1 的演示按钮可用于「无 Adapter 时回退」；新增 **连接状态**（已连/未连/重连中）、可选「开始回放」按钮（若 Adapter 支持）；可提供 manifest 动作列表的触发入口（按名播放） |
 
-### 4.2 数据流（V2）
+### 5.2 数据流（V2）
 
 ```
 [Adapter WS] → 收到 agent_state / render
@@ -110,14 +143,14 @@
     → mapping + engine 驱动 VRM（与 V1 同）
 ```
 
-### 4.3 平滑过渡（本版强调）
+### 5.3 平滑过渡（本版强调）
 
 - **intensity**：继续使用 V1 的每帧 clamp 缓动（如 0.05/帧），确保 emotion/state 切换不突变。
 - **状态切换**：同一 session 内连续收到不同 `state` 时，直接切换目标状态，由 intensity 与动画插值保证视觉平滑；避免竞态（如快速连续 thinking ↔ speaking）可通过「只认最新 state」或短时防抖处理。
 
 ---
 
-## 5. Adapter 侧（最小可行）
+## 6. Adapter 侧（最小可行）
 
 - **职责**：监听 WebSocket 端口，接受前端连接；按脚本或定时向该连接推送 `agent_state`（及可选 `render`）消息。
 - **实现**：Node.js 或 Go 均可；可先不做鉴权，session_id 固定为 `demo`。
@@ -125,7 +158,7 @@
 
 ---
 
-## 6. 验收标准（V2）
+## 7. 验收标准（V2）
 
 - [ ] 前端可配置 WebSocket 地址并成功连接 Adapter。
 - [ ] Adapter 回放脚本能按顺序发送 typing → thinking → speaking（或等价 state），前端 Avatar 状态与表现随之切换。
