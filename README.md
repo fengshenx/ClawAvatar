@@ -1,91 +1,74 @@
 # ClawAvatar
 
-CatBot Avatar Desktop Application for OpenClaw
+Web 端 VRM 形象展示与状态演示（V1：本地演示）。支持 idle / thinking / speaking 状态切换，通过按钮模拟事件协议，为后续接入 WebSocket 与 OpenClaw 打基础。
 
-## 🎯 Overview
+## 技术栈
 
-ClawAvatar is a desktop application that displays a 3D avatar in the bottom-right corner of your screen. It connects to OpenClaw Gateway and shows the agent's status in real-time.
+- **three** + **@pixiv/three-vrm**：3D 与 VRM 渲染
+- **React** + **TypeScript** + **Vite**：前端与构建
+- **Zustand**：前端状态机
 
-## 🏗️ Architecture
+## 项目结构（V1）
 
 ```
-ClawAvatar/
-├── electron/           # Electron main process
-│   ├── src/
-│   │   ├── main/       # Main process (window management)
-│   │   ├── preload/    # Preload scripts (IPC bridge)
-│   │   └── renderer/  # React UI
-│   └── platforms/     # Platform-specific code
-│       ├── mac/       # macOS-specific
-│       └── win/       # Windows-specific
-├── shared/            # Shared code (types, utilities)
-└── public/           # Static assets (VRM models)
+src/
+  engine/         # Three 场景、VRM 加载、表情/视线/动画，不关心协议
+  protocol/       # agent_state / render 类型与 simulate 逻辑
+  app/            # 状态机 (state) + 状态到动画参数映射 (mapping)
+  ui/             # 模拟协议事件的按钮组 (DemoButtons)
+  hooks/          # useAvatarScene：场景创建、VRM 加载、渲染循环
 ```
 
-## 🚀 Development
+## 如何运行本地演示
 
-### Prerequisites
+1. 安装依赖：
 
-- Node.js 22+
-- npm or pnpm
+   ```bash
+   npm install
+   ```
 
-### Setup
+2. 准备 VRM 模型（至少一个 .vrm 文件）：
+   - 将文件命名为 `avatar.vrm` 并放入 **`public/models/`** 目录；
+   - 或修改代码中的 `vrmUrl`（如 `useAvatarScene` 的默认 `DEFAULT_VRM_URL`）指向你的 URL。
+
+3. 启动开发服务器：
+
+   ```bash
+   npm run dev
+   ```
+
+4. 在浏览器中打开控制台提示的地址（通常为 `http://localhost:5173`）。
+
+## 如何用按钮模拟协议事件
+
+- **设为 Idle**：发送 `agent_state`，`state=idle`，进入呼吸 + 眨眼。
+- **设为 Thinking**：发送 `agent_state`，`state=thinking`，进入思考姿态/视线偏移。
+- **设为 Speaking**：发送 `agent_state`，`state=speaking`，进入说话姿态（微动/口型）。
+- **发送示例 Render**：发送一条 `render`（如 `state=speaking`, `emotion=happy`），用于验证 render 路径。
+
+按钮不请求网络，仅在本地调用状态机与 `protocol/simulate`，驱动 Avatar。当前状态会显示在控制区上方。
+
+## 数据流（V1）
+
+```
+[按钮点击] → 构造 agent_state / render
+    → protocol/simulate 或 app/state 更新 currentState
+    → mapping 得到动画参数（blend 权重、lookAt 目标等）
+    → engine (avatarRig + animation) 驱动 VRM
+```
+
+## 文档
+
+- 第一版设计：`docs/design_v1.md`
+- 路线图与协议扩展：`docs/roadmap.md`
+
+## 构建与预览
 
 ```bash
-# Install dependencies
-npm install
-
-# Development mode
-npm run dev
-
-# Build
-npm run build
-
-# Build for macOS
-npm run build:mac
-
-# Build for Windows
-npm run build:win
+npm run build   # 产出到 dist/
+npm run preview # 本地预览构建结果
 ```
 
-## 📦 Current Status
+## License
 
-### MVP (Minimum Viable Product)
-- ✅ Project structure
-- ✅ Electron window (transparent, always-on-top)
-- ✅ React + TypeScript setup
-- ✅ Basic UI components
-- ✅ Simulated OpenClaw connection
-
-### TODO
-- [ ] React Three Fiber + VRM integration
-- [ ] Real OpenClaw WebSocket connection
-- [ ] Avatar animations and expressions
-- [ ] macOS-specific optimizations
-- [ ] Windows support (future)
-
-## 🎨 Features
-
-### Planned
-- 3D VRM avatar (VRoid models)
-- Real-time status updates from OpenClaw
-- Speech bubbles
-- Multiple expressions (idle, working, thinking, happy, sleeping)
-- Cross-platform support (macOS, Windows, Linux)
-
-## 🛠️ Tech Stack
-
-- **Desktop**: Electron
-- **UI**: React + TypeScript
-- **3D Rendering**: React Three Fiber
-- **VRM**: @pixiv/three-vrm
-- **Build**: Vite + Electron Builder
-- **Communication**: WebSocket (OpenClaw Gateway)
-
-## 📝 License
-
-MIT
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
+见 [LICENSE](LICENSE)。

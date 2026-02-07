@@ -41,3 +41,5 @@ yarn-error.log*
 # public/models/*.vrm
 
 package-lock.json
+tsconfig.tsbuildinfo
+public/models/avatar.glb
