@@ -1,7 +1,7 @@
 /**
  * Electron 预加载脚本：安全暴露桌面端 API 给渲染进程
  */
-import { contextBridge, ipcRenderer } from 'electron';
+const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electronAPI', {
   getPlatform: () => ipcRenderer.invoke('electron:getPlatform'),

@@ -67,6 +67,19 @@ export function stateToAnimationParams(
       params.thinkingWeight = 0;
       params.speakingWeight = 1;
       break;
+    case 'tool_running':
+      params.breathingWeight = 0.6;
+      params.blinkWeight = 0.8;
+      params.thinkingWeight = 0.7;
+      params.speakingWeight = 0;
+      break;
+    case 'error':
+      params.breathingWeight = 0.8;
+      params.blinkWeight = 1;
+      params.thinkingWeight = 0;
+      params.speakingWeight = 0;
+      params.intensity = Math.min(params.intensity, 0.5);
+      break;
     default:
       params.breathingWeight = 1;
       params.blinkWeight = 1;

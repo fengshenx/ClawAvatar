@@ -5,6 +5,7 @@
 
 import * as THREE from 'three';
 import type { VRM } from '@pixiv/three-vrm';
+import type { AgentStateType } from '@/protocol/types';
 import type { AnimationParams } from '@/app/mapping';
 
 /** 可选：BlendShape 名称与 emotion 的映射（按 VRM 规范，若无则用骨骼/简单动画替代） */
@@ -69,7 +70,7 @@ export function applyBlink(
   vrm: VRM,
   blinkWeight: number,
   time: number,
-  state: 'idle' | 'thinking' | 'speaking'
+  state: AgentStateType
 ): void {
   const expressionManager = vrm.expressionManager;
   if (!expressionManager) return;
@@ -77,10 +78,10 @@ export function applyBlink(
   const blink = expressionManager.getExpression('blink');
   if (!blink) return;
 
-  const value =
-    state === 'idle'
-      ? periodicBlinkValue(time) * Math.max(0, Math.min(1, blinkWeight))
-      : Math.max(0, Math.min(1, blinkWeight));
+  const usePeriodic = state === 'idle' || state === 'error';
+  const value = usePeriodic
+    ? periodicBlinkValue(time) * Math.max(0, Math.min(1, blinkWeight))
+    : Math.max(0, Math.min(1, blinkWeight));
   expressionManager.setValue('blink', value);
 }
 

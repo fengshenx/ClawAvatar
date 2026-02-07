@@ -261,3 +261,74 @@ body {
   background: #334155;
   color: #e2e8f0;
 }
+
+/* V4：用户输入（user_input 上行） */
+.user-input {
+  margin-top: 0.75rem;
+  max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.user-input__session {
+  font-size: 11px;
+  color: #64748b;
+  margin-bottom: 0.35rem;
+}
+
+.user-input__session code {
+  font-size: 10px;
+  background: #1e293b;
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+}
+
+.user-input__form {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.user-input__field {
+  flex: 1;
+  padding: 0.45rem 0.6rem;
+  font-size: 13px;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  background: #0f172a;
+  color: #e2e8f0;
+  outline: none;
+}
+
+.user-input__field:focus {
+  border-color: #475569;
+}
+
+.user-input__field::placeholder {
+  color: #64748b;
+}
+
+.user-input__field:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.user-input__btn {
+  padding: 0.45rem 0.9rem;
+  font-size: 13px;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  background: #1e293b;
+  color: #e2e8f0;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.user-input__btn:hover:not(:disabled) {
+  background: #334155;
+  border-color: #475569;
+}
+
+.user-input__btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

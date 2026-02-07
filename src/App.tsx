@@ -10,6 +10,7 @@ import { useAvatarWs } from '@/hooks/useAvatarWs';
 import { DemoButtons } from '@/ui/DemoButtons';
 import { ClipButtons } from '@/ui/ClipButtons';
 import { ConnectionStatus } from '@/ui/ConnectionStatus';
+import { UserInput } from '@/ui/UserInput';
 import { isElectron } from '@/config';
 
 function useWindowSize() {
@@ -33,6 +34,8 @@ function App() {
     error: wsError,
     connect: wsConnect,
     disconnect: wsDisconnect,
+    sendUserInput,
+    sessionId,
     wsUrl,
   } = useAvatarWs();
 
@@ -62,6 +65,11 @@ function App() {
           wsUrl={wsUrl}
           onConnect={wsConnect}
           onDisconnect={wsDisconnect}
+        />
+        <UserInput
+          sessionId={sessionId}
+          disabled={wsStatus !== 'connected'}
+          onSend={sendUserInput}
         />
         <ClipButtons clipNames={clipNames} onPlayClip={onPlayClip} />
         <DemoButtons />

@@ -48,7 +48,7 @@ function createWindow() {
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
-      preload: path.join(__dirname, 'preload.mjs'),
+      preload: path.join(__dirname, 'preload.cjs'),
     },
   });
 
@@ -266,6 +266,9 @@ function updateMenu() {
 
 // --------------- IPC ---------------
 ipcMain.handle('electron:getPlatform', () => process.platform);
+
+/** V4：渲染进程获取鉴权 token（从环境变量读取，由 Adapter/Gateway 校验） */
+ipcMain.handle('avatar:getToken', () => process.env.AVATAR_TOKEN ?? null);
 
 ipcMain.handle('electron:getOptions', () => ({
   alwaysOnTop,

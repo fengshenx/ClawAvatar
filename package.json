@@ -6,11 +6,12 @@
   "main": "electron/main.mjs",
   "scripts": {
     "dev": "vite",
-    "dev:electron": "npx concurrently -k \"vite\" \"wait-on http://localhost:5173 && electron . --dev\"",
+    "dev:electron": "npx concurrently -n vite,electron \"vite\" \"wait-on http://localhost:5173 && electron . --dev\"",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "adapter": "node adapter/server.mjs",
     "dev:all": "npx concurrently -n vite,adapter \"npm run dev\" \"npm run adapter\"",
+    "dev:electron-only": "npx wait-on http://localhost:5173 && electron . --dev",
     "start": "electron .",
     "build:electron": "npm run build && electron ."
   },
