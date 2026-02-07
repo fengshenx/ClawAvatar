@@ -45,6 +45,7 @@ export function applyStateMotion(
 
   group.position.y = breath + nod;
   group.rotation.x = tilt.x;
-  group.rotation.y = Math.PI + tilt.y;
+  // 模型本体已在 attachVrmToGroup 中做了基础朝向，这里只叠加状态微偏转
+  group.rotation.y = tilt.y;
   group.rotation.z = tilt.z;
 }
