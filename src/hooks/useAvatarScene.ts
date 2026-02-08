@@ -65,6 +65,19 @@ export function useAvatarScene(options: UseAvatarSceneOptions) {
   const [clipNames, setClipNames] = useState<string[]>([]);
   const availableExpressionsRef = useRef<string[]>([]);
 
+  function playClipAtFrame(actions: THREE.AnimationAction[], frame: number): void {
+    const action = actions[0];
+    if (!action) return;
+    action.reset();
+    action.enabled = true;
+    action.setEffectiveWeight(1);
+    action.setEffectiveTimeScale(0);
+    const fps = 30;
+    action.time = frame / fps;
+    action.play();
+    activeClipIndexRef.current = 0;
+  }
+
   useEffect(() => {
     const sessionId = ++loadSessionRef.current;
     let disposed = false;
@@ -117,6 +130,7 @@ export function useAvatarScene(options: UseAvatarSceneOptions) {
           clipNamesRef.current = result.clipNames;
           actionsRef.current = result.actions;
           setClipNames([...result.clipNames]);
+          playClipAtFrame(result.actions, 3);
           vrm.scene.visible = true;
           setLoading(false);
           void loadVrmaFromManifest(vrm);
@@ -264,6 +278,9 @@ export function useAvatarScene(options: UseAvatarSceneOptions) {
         playClipRef.current = playClip;
         clipNamesRef.current = newNames;
         actionsRef.current = newActions;
+        if (newActions.length > 0 && activeClipIndexRef.current === null) {
+          playClipAtFrame(newActions, 3);
+        }
       }
       setClipNames([...clipNamesRef.current]);
     }
