@@ -41,7 +41,7 @@ function App() {
   } = useAvatarWs();
 
   return (
-    <div className="app">
+    <div className={`app${isElectron() ? ' app--electron' : ''}`}>
       {isElectron() && (
         <div className="app__drag-bar" title="拖拽移动窗口" />
       )}

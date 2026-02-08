@@ -410,3 +410,7 @@ body {
   display: flex;
   gap: 8px;
 }
+
+.app--electron .app__canvas-wrap {
+  inset: 28px 0 0 0;
+}

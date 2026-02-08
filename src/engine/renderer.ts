@@ -41,8 +41,8 @@ export function createScene(options: RendererOptions): SceneContext {
   scene.background = new THREE.Color(background);
 
   const camera = new THREE.PerspectiveCamera(35, width / height, 0.1, 100);
-  camera.position.set(0, 1.4, 1.8);
-  const orbitTarget = new THREE.Vector3(0, 1.2, 0);
+  camera.position.set(0, 0.85, 1.8);
+  const orbitTarget = new THREE.Vector3(0, 1, 0);
   camera.lookAt(orbitTarget);
 
   const controls = new OrbitControls(camera, canvas);
