@@ -27,6 +27,8 @@ interface AppStore {
   applyMessage: (message: ProtocolMessage) => void;
   /** 直接设置状态（供 UI 或内部使用） */
   setState: (state: AgentStateType) => void;
+  /** 直接设置表情（供 UI 按钮使用） */
+  setEmotion: (emotion: EmotionType) => void;
   /** 重置为初始状态 */
   reset: () => void;
 }
@@ -49,6 +51,12 @@ export const useAppStore = create<AppStore>((set) => ({
   setState: (state: AgentStateType) => {
     set((s) => ({
       current: { ...s.current, state },
+    }));
+  },
+
+  setEmotion: (emotion: EmotionType) => {
+    set((s) => ({
+      current: { ...s.current, emotion },
     }));
   },
 

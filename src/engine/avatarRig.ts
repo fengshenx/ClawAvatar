@@ -15,20 +15,30 @@ const EMOTION_TO_PRESET: Record<string, string> = {
   sad: 'sad',
   angry: 'angry',
   surprised: 'surprised',
+  relaxed: 'relaxed',
 };
+
+const ALL_EMOTIONS = Object.values(EMOTION_TO_PRESET);
 
 /**
  * 应用表情（BlendShape），若有则用，若无则跳过
+ * VRM expression 是累加的，所以要先清空其他表情
  */
 export function applyEmotion(vrm: VRM, emotion: string, intensity: number): void {
   const expressionManager = vrm.expressionManager;
-  if (!expressionManager) return;
+  if (!expressionManager) {
+    console.log('[applyEmotion] No expressionManager');
+    return;
+  }
 
-  const presetName = EMOTION_TO_PRESET[emotion] ?? 'neutral';
-  const preset = expressionManager.getExpression(presetName);
-  if (!preset) return;
+  const presetName = EMOTION_TO_PRESET[emotion] ?? emotion;
+  const clampedIntensity = Math.max(0, Math.min(1, intensity));
 
-  expressionManager.setValue(presetName, Math.max(0, Math.min(1, intensity)));
+  ALL_EMOTIONS.forEach((name) => {
+    if (name && expressionManager.getExpression(name)) {
+      expressionManager.setValue(name, name === presetName ? clampedIntensity : 0);
+    }
+  });
 }
 
 /**

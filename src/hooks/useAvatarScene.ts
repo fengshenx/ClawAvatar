@@ -13,6 +13,7 @@ import {
   updateControls,
   loadVrm,
   attachVrmToGroup,
+  setNaturalPose,
   loadVrma,
   setupClipAnimations,
   addVrmaClipsToMixer,
@@ -20,11 +21,30 @@ import {
   applyLookAt,
   applyAnimationParams,
   applyHeadBoneMotion,
+  applyNaturalArmPose,
 } from '@/engine';
 import type { VrmaEntry } from '@/engine';
 import type { SceneContext } from '@/engine';
 import { useAppStore } from '@/app/state';
 import { isElectron } from '@/config';
+
+const PRESET_EXPRESSIONS = ['neutral', 'happy', 'sad', 'angry', 'surprised', 'relaxed', 'unknown'];
+
+function extractExpressionsFromVrm(vrm: VRM): string[] {
+  const expressionManager = vrm.expressionManager;
+  if (!expressionManager) {
+    console.log('[Expressions] No expressionManager found on VRM');
+    return [];
+  }
+  const available = PRESET_EXPRESSIONS.filter((name) => {
+    const expr = expressionManager.getExpression(name);
+    console.log('[Expressions] Check', name, ':', expr ? 'available' : 'not available');
+    return expr != null;
+  });
+  console.log('[Expressions] Final available:', available);
+  return available;
+}
+
 import {
   stateToAnimationParams,
   lerpAnimationParams,
@@ -54,6 +74,7 @@ export function useAvatarScene(options: UseAvatarSceneOptions) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [clipNames, setClipNames] = useState<string[]>([]);
+  const availableExpressionsRef = useRef<string[]>([]);
 
   useEffect(() => {
     const sessionId = ++loadSessionRef.current;
@@ -69,6 +90,11 @@ export function useAvatarScene(options: UseAvatarSceneOptions) {
         if (disposed || loadSessionRef.current !== sessionId) return;
         vrmRef.current = vrm;
         attachVrmToGroup(vrm, ctx.avatarGroup);
+        setNaturalPose(vrm);
+
+        const expressions = extractExpressionsFromVrm(vrm);
+        availableExpressionsRef.current = expressions;
+        console.log('[Expressions] Available:', expressions);
         // 避免首屏先看到 T-pose，等动作系统就绪后再显示
         vrm.scene.visible = false;
         const result = setupClipAnimations(vrm, gltf);
@@ -251,7 +277,6 @@ export function useAvatarScene(options: UseAvatarSceneOptions) {
         playClipRef.current = playClip;
         clipNamesRef.current = newNames;
         actionsRef.current = newActions;
-        playClip(newNames[0] ?? '');
       }
       setClipNames([...clipNamesRef.current]);
     }
@@ -315,9 +340,14 @@ export function useAvatarScene(options: UseAvatarSceneOptions) {
         const lookAtTarget = ctx.camera.position.clone();
         applyAnimationParams(vrm, params, time, lookAtTarget);
         applyHeadBoneMotion(vrm, params, time);
+        applyNaturalArmPose(vrm);
       } else {
         // 播放 clip 时仍保持眼神朝向相机，避免视线停在过期目标或被异常轨道锁住
         applyLookAt(vrm, ctx.camera.position.clone());
+        const current = useAppStore.getState().current;
+        const params = stateToAnimationParams(current.state, current.intensity, current.emotion);
+        applyAnimationParams(vrm, params, time, ctx.camera.position.clone());
+        applyNaturalArmPose(vrm);
         updateControls(ctx, dt);
       }
 
@@ -341,5 +371,7 @@ export function useAvatarScene(options: UseAvatarSceneOptions) {
     playClipRef.current?.(name);
   };
 
-  return { canvasRef, loading, error, clipNames, onPlayClip };
+  const getAvailableExpressions = () => availableExpressionsRef.current;
+
+  return { canvasRef, loading, error, clipNames, onPlayClip, getAvailableExpressions };
 }

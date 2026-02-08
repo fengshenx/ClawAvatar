@@ -1,5 +1,6 @@
 import { useAppStore } from '@/app/state';
 import { Dropdown } from './Dropdown';
+import { ExpressionButtons } from './ExpressionButtons';
 import type { AgentStateMessage, RenderMessage } from '@/protocol/types';
 
 const SESSION_ID = 'demo';
@@ -29,9 +30,10 @@ function sendRenderExample() {
 interface ElectronControlsProps {
   clipNames: string[];
   onPlayClip: (name: string) => void;
+  onGetAvailableExpressions: () => string[];
 }
 
-export function ElectronControls({ clipNames, onPlayClip }: ElectronControlsProps) {
+export function ElectronControls({ clipNames, onPlayClip, onGetAvailableExpressions }: ElectronControlsProps) {
   const currentState = useAppStore((s) => s.current.state);
 
   return (
@@ -78,6 +80,9 @@ export function ElectronControls({ clipNames, onPlayClip }: ElectronControlsProp
             ))}
           </Dropdown>
         )}
+      </div>
+      <div className="electron-controls__row" style={{ marginTop: '8px' }}>
+        <ExpressionButtons onGetAvailableExpressions={onGetAvailableExpressions} />
       </div>
     </div>
   );

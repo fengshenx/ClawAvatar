@@ -12,6 +12,7 @@ import { ClipButtons } from '@/ui/ClipButtons';
 import { ConnectionStatus } from '@/ui/ConnectionStatus';
 import { UserInput } from '@/ui/UserInput';
 import { ElectronControls } from '@/ui/ElectronControls';
+import { ExpressionButtons } from '@/ui/ExpressionButtons';
 import { isElectron } from '@/config';
 
 function useWindowSize() {
@@ -26,7 +27,7 @@ function useWindowSize() {
 
 function App() {
   const { width, height } = useWindowSize();
-  const { canvasRef, loading, error, clipNames, onPlayClip } = useAvatarScene({
+  const { canvasRef, loading, error, clipNames, onPlayClip, getAvailableExpressions } = useAvatarScene({
     width,
     height,
   });
@@ -61,7 +62,11 @@ function App() {
       </div>
       <aside className="app__controls">
         {isElectron() ? (
-          <ElectronControls clipNames={clipNames} onPlayClip={onPlayClip} />
+          <ElectronControls
+            clipNames={clipNames}
+            onPlayClip={onPlayClip}
+            onGetAvailableExpressions={getAvailableExpressions}
+          />
         ) : (
           <>
             <ConnectionStatus
@@ -77,6 +82,7 @@ function App() {
               onSend={sendUserInput}
             />
             <ClipButtons clipNames={clipNames} onPlayClip={onPlayClip} />
+            <ExpressionButtons onGetAvailableExpressions={getAvailableExpressions} />
             <DemoButtons />
           </>
         )}
