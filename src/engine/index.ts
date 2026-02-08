@@ -4,7 +4,7 @@
 
 export { createScene, renderFrame, resizeRenderer, updateControls } from './renderer';
 export type { SceneContext, RendererOptions } from './renderer';
-export { loadVrm, attachVrmToGroup, setNaturalPose, applyNaturalArmPose } from './loadVrm';
+export { loadVrm, attachVrmToGroup } from './loadVrm';
 export type { LoadVrmOptions, LoadVrmResult } from './loadVrm';
 export { loadVrma } from './loadVrma';
 export type { GLTFWithVrmAnimations } from './loadVrma';

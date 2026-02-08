@@ -7,7 +7,6 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { VRMLoaderPlugin, VRM } from '@pixiv/three-vrm';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import type { VRMHumanBoneName } from '@pixiv/three-vrm';
 
 export type LoadVrmOptions = {
   /** VRM/GLB 文件 URL（如 /models/avatar.vrm 或 /models/avatar.glb） */
@@ -55,59 +54,4 @@ export function attachVrmToGroup(vrm: VRM, group: THREE.Group): void {
   vrm.scene.rotation.y = Math.PI; // 面向相机
   vrm.scene.position.set(0, 0, 0);
   vrm.scene.scale.setScalar(1);
-}
-
-/**
- * 设置自然 A-pose 站立姿态（手臂自然下垂）
- */
-export function setNaturalPose(vrm: VRM): void {
-  const humanoid = vrm.humanoid;
-  if (!humanoid) {
-    console.log('[setNaturalPose] No humanoid found');
-    return;
-  }
-
-  const PI = Math.PI;
-
-  const bones: VRMHumanBoneName[] = ['leftUpperArm', 'rightUpperArm', 'leftLowerArm', 'rightLowerArm'];
-  bones.forEach((name) => {
-    const bone = humanoid.getRawBoneNode(name);
-    if (bone) {
-      if (name.includes('UpperArm')) {
-        const angle = name.includes('Left') ? PI * 0.05 : -PI * 0.05;
-        bone.quaternion.setFromEuler(new THREE.Euler(0, 0, angle));
-      } else {
-        const angle = name.includes('Left') ? PI * 0.1 : -PI * 0.1;
-        bone.quaternion.setFromEuler(new THREE.Euler(0, 0, angle));
-      }
-    }
-  });
-}
-
-/**
- * 在每帧渲染时应用自然手臂姿态
- * VRM 内部系统会覆盖骨骼，所以我们需要在每帧都应用
- */
-export function applyNaturalArmPose(vrm: VRM): void {
-  const humanoid = vrm.humanoid;
-  if (!humanoid) return;
-
-  const PI = Math.PI;
-  const leftUpperArm = humanoid.getRawBoneNode('leftUpperArm');
-  const rightUpperArm = humanoid.getRawBoneNode('rightUpperArm');
-  const leftLowerArm = humanoid.getRawBoneNode('leftLowerArm');
-  const rightLowerArm = humanoid.getRawBoneNode('rightLowerArm');
-
-  if (leftUpperArm) {
-    leftUpperArm.quaternion.setFromEuler(new THREE.Euler(0, 0, PI * 0.05));
-  }
-  if (rightUpperArm) {
-    rightUpperArm.quaternion.setFromEuler(new THREE.Euler(0, 0, -PI * 0.05));
-  }
-  if (leftLowerArm) {
-    leftLowerArm.quaternion.setFromEuler(new THREE.Euler(0, 0, PI * 0.1));
-  }
-  if (rightLowerArm) {
-    rightLowerArm.quaternion.setFromEuler(new THREE.Euler(0, 0, -PI * 0.1));
-  }
 }

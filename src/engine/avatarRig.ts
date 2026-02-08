@@ -26,10 +26,7 @@ const ALL_EMOTIONS = Object.values(EMOTION_TO_PRESET);
  */
 export function applyEmotion(vrm: VRM, emotion: string, intensity: number): void {
   const expressionManager = vrm.expressionManager;
-  if (!expressionManager) {
-    console.log('[applyEmotion] No expressionManager');
-    return;
-  }
+  if (!expressionManager) return;
 
   const presetName = EMOTION_TO_PRESET[emotion] ?? emotion;
   const clampedIntensity = Math.max(0, Math.min(1, intensity));

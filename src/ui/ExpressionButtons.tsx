@@ -34,7 +34,6 @@ export function ExpressionButtons({ onGetAvailableExpressions }: ExpressionButto
   if (availableExpressions.length === 0) return null;
 
   const handleSelectEmotion = (emotion: string) => {
-    console.log('[ExpressionButtons] Selecting emotion:', emotion);
     setEmotion(emotion as EmotionType);
     setIsOpen(false);
   };
