@@ -12,6 +12,8 @@ export interface RendererOptions {
   height: number;
   /** 背景色 */
   background?: number;
+  /** 是否启用轨道控制（鼠标拖拽旋转），Electron 下禁用 */
+  enableControls?: boolean;
 }
 
 export interface SceneContext {
@@ -33,7 +35,7 @@ const DEFAULT_BG = 0x1a1a2e;
  * 创建场景、相机、渲染器与 avatar 容器
  */
 export function createScene(options: RendererOptions): SceneContext {
-  const { canvas, width, height, background = DEFAULT_BG } = options;
+  const { canvas, width, height, background = DEFAULT_BG, enableControls = true } = options;
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(background);
@@ -51,6 +53,8 @@ export function createScene(options: RendererOptions): SceneContext {
   controls.maxDistance = 5;
   controls.maxPolarAngle = Math.PI * 0.45;
   controls.minPolarAngle = Math.PI * 0.15;
+  controls.enabled = enableControls;
+  controls.enableRotate = enableControls;
 
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
   renderer.setSize(width, height);

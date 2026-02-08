@@ -24,6 +24,7 @@ import {
 import type { VrmaEntry } from '@/engine';
 import type { SceneContext } from '@/engine';
 import { useAppStore } from '@/app/state';
+import { isElectron } from '@/config';
 import {
   stateToAnimationParams,
   lerpAnimationParams,
@@ -60,7 +61,7 @@ export function useAvatarScene(options: UseAvatarSceneOptions) {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = createScene({ canvas, width, height });
+    const ctx = createScene({ canvas, width, height, enableControls: !isElectron() });
     ctxRef.current = ctx;
 
     loadVrm({ url: vrmUrl })

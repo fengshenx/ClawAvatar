@@ -11,6 +11,7 @@ import { DemoButtons } from '@/ui/DemoButtons';
 import { ClipButtons } from '@/ui/ClipButtons';
 import { ConnectionStatus } from '@/ui/ConnectionStatus';
 import { UserInput } from '@/ui/UserInput';
+import { ElectronControls } from '@/ui/ElectronControls';
 import { isElectron } from '@/config';
 
 function useWindowSize() {
@@ -59,20 +60,26 @@ function App() {
         )}
       </div>
       <aside className="app__controls">
-        <ConnectionStatus
-          status={wsStatus}
-          error={wsError}
-          wsUrl={wsUrl}
-          onConnect={wsConnect}
-          onDisconnect={wsDisconnect}
-        />
-        <UserInput
-          sessionId={sessionId}
-          disabled={wsStatus !== 'connected'}
-          onSend={sendUserInput}
-        />
-        <ClipButtons clipNames={clipNames} onPlayClip={onPlayClip} />
-        <DemoButtons />
+        {isElectron() ? (
+          <ElectronControls clipNames={clipNames} onPlayClip={onPlayClip} />
+        ) : (
+          <>
+            <ConnectionStatus
+              status={wsStatus}
+              error={wsError}
+              wsUrl={wsUrl}
+              onConnect={wsConnect}
+              onDisconnect={wsDisconnect}
+            />
+            <UserInput
+              sessionId={sessionId}
+              disabled={wsStatus !== 'connected'}
+              onSend={sendUserInput}
+            />
+            <ClipButtons clipNames={clipNames} onPlayClip={onPlayClip} />
+            <DemoButtons />
+          </>
+        )}
       </aside>
       {isElectron() && (
         <div className="app__electron-hint" title="视图选项请使用菜单栏「视图」">
