@@ -28,10 +28,17 @@ function getWorkArea() {
   return primary.workArea;
 }
 
+/** 获取完整屏幕边界（用于贴边定位） */
+function getFullBounds() {
+  const primary = screen.getPrimaryDisplay();
+  return primary.bounds;
+}
+
 function createWindow() {
+  const bounds = getFullBounds();
   const work = getWorkArea();
-  const x = work.x + work.width - WIN_WIDTH - MARGIN;
-  const y = work.y + work.height - WIN_HEIGHT - MARGIN;
+  const x = bounds.x + bounds.width - WIN_WIDTH - MARGIN;
+  const y = bounds.y + bounds.height - WIN_HEIGHT - MARGIN;
 
   mainWindow = new BrowserWindow({
     width: WIN_WIDTH,
@@ -87,6 +94,7 @@ function createWindow() {
   function applyEdgeSnap() {
     if (!mainWindow) return;
     const [winX, winY] = mainWindow.getPosition();
+    const bounds = getFullBounds();
     const work = getWorkArea();
     const w = mainWindow.getBounds().width;
     const h = mainWindow.getBounds().height;
@@ -96,28 +104,29 @@ function createWindow() {
     let newEdge = null;
 
     // 优先检查左右（Mac 常见贴边）
-    if (winX - work.x <= SNAP_THRESHOLD) {
-      targetX = work.x;
+    if (winX - bounds.x <= SNAP_THRESHOLD) {
+      targetX = bounds.x;
       newEdge = 'left';
-    } else if (work.x + work.width - (winX + w) <= SNAP_THRESHOLD) {
-      targetX = work.x + work.width - w;
+    } else if (bounds.x + bounds.width - (winX + w) <= SNAP_THRESHOLD) {
+      targetX = bounds.x + bounds.width - w;
       newEdge = 'right';
     }
 
-    if (work.y >= 0 && winY - work.y <= SNAP_THRESHOLD) {
-      targetY = work.y;
+    // 顶部贴紧屏幕顶部（使用 bounds.y 而非 work.y，避免被菜单栏遮挡）
+    if (bounds.y >= 0 && winY - bounds.y <= SNAP_THRESHOLD) {
+      targetY = bounds.y;
       if (!newEdge) newEdge = 'top';
     }
 
     // 若已设置 dock 偏好，则强制贴该边
     if (dockEdge === 'left') {
-      targetX = work.x;
+      targetX = bounds.x;
       newEdge = 'left';
     } else if (dockEdge === 'right') {
-      targetX = work.x + work.width - w;
+      targetX = bounds.x + bounds.width - w;
       newEdge = 'right';
     } else if (dockEdge === 'top') {
-      targetY = work.y;
+      targetY = bounds.y;
       newEdge = 'top';
     } else if (dockEdge === null && newEdge != null) {
       // 用户拖到边缘则吸附
@@ -291,13 +300,13 @@ ipcMain.handle('electron:setClickThrough', (_, value) => {
 ipcMain.handle('electron:setDockEdge', (_, edge) => {
   dockEdge = edge; // 'left' | 'right' | 'top' | null
   if (mainWindow && edge) {
-    const work = getWorkArea();
+    const bounds = getFullBounds();
     const [wx, wy] = mainWindow.getPosition();
     const w = mainWindow.getBounds().width;
     const h = mainWindow.getBounds().height;
-    if (edge === 'left') mainWindow.setPosition(work.x, wy);
-    else if (edge === 'right') mainWindow.setPosition(work.x + work.width - w, wy);
-    else if (edge === 'top') mainWindow.setPosition(wx, work.y);
+    if (edge === 'left') mainWindow.setPosition(bounds.x, wy);
+    else if (edge === 'right') mainWindow.setPosition(bounds.x + bounds.width - w, wy);
+    else if (edge === 'top') mainWindow.setPosition(wx, bounds.y);
   }
   updateMenu();
 });

@@ -116,10 +116,6 @@ export function renderFrame(ctx: SceneContext): void {
 /** Avatar 拖拽状态 */
 interface DragState {
   isDragging: boolean;
-  startMouseX: number;
-  startMouseY: number;
-  windowStartX: number;
-  windowStartY: number;
 }
 
 /**
@@ -160,12 +156,6 @@ export function setupAvatarDrag(
     if (intersects.length > 0) {
       // 点击在 Avatar 上，开始拖拽
       dragState.isDragging = true;
-      dragState.startMouseX = event.screenX;
-      dragState.startMouseY = event.screenY;
-      // 获取窗口当前位置作为基准
-      const [winX, winY] = window.electronAPI.getOptions().then(() => [0, 0]); // 占位，实际在 move 时获取
-      // 实际获取窗口位置需要通过 IPC，这会有延迟
-      // 改用累加方式更简单
       ctx.controls.enabled = false; // 拖拽时禁用轨道控制
       canvas.style.cursor = 'grabbing';
       // 临时取消点击穿透，确保鼠标事件被正确处理
