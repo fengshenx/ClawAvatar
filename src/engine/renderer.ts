@@ -35,10 +35,14 @@ const DEFAULT_BG = 0x1a1a2e;
  * 创建场景、相机、渲染器与 avatar 容器
  */
 export function createScene(options: RendererOptions): SceneContext {
-  const { canvas, width, height, background = DEFAULT_BG, enableControls = true } = options;
+  const { canvas, width, height, background, enableControls = true } = options;
 
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(background);
+  // 透明模式：Electron 悬浮窗口不设置背景；否则可按需设置
+  if (background !== undefined) {
+    scene.background = new THREE.Color(background);
+  }
+  // 保持 scene.background 为 null 以支持透明悬浮窗口
 
   const camera = new THREE.PerspectiveCamera(35, width / height, 0.1, 100);
   camera.position.set(0, 0.85, 1.8);
@@ -56,10 +60,10 @@ export function createScene(options: RendererOptions): SceneContext {
   controls.enabled = enableControls;
   controls.enableRotate = enableControls;
 
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
   renderer.setSize(width, height);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  // 不设置 scene.background，保持透明
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1;
   renderer.shadowMap.enabled = true;
@@ -104,6 +108,8 @@ export function updateControls(ctx: SceneContext, delta: number): void {
  * 单帧渲染
  */
 export function renderFrame(ctx: SceneContext): void {
+  // 保护措施：确保背景始终透明（防止 VRM 插件设置不透明背景）
+  ctx.scene.background = null;
   ctx.renderer.render(ctx.scene, ctx.camera);
 }
 

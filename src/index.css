@@ -14,7 +14,7 @@ body {
   font-family: system-ui, -apple-system, sans-serif;
   font-size: 14px;
   color: #e2e8f0;
-  background: #1a1a2e;
+  background: transparent;
 }
 
 #root {
