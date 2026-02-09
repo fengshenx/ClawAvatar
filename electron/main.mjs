@@ -302,10 +302,19 @@ ipcMain.handle('electron:setDockEdge', (_, edge) => {
   updateMenu();
 });
 
-// 渲染进程请求“忽略鼠标”（用于 hover 时临时穿透）
+// 渲染进程请求"忽略鼠标"（用于 hover 时临时穿透）
 ipcMain.on('electron:setIgnoreMouseEvents', (event, ignore, options) => {
   const win = BrowserWindow.fromWebContents(event.sender);
   if (win) win.setIgnoreMouseEvents(ignore, options || { forward: true });
+});
+
+// 拖拽 Avatar 时移动窗口
+ipcMain.on('electron:moveWindow', (event, dx, dy) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (win) {
+    const [x, y] = win.getPosition();
+    win.setPosition(x + dx, y + dy);
+  }
 });
 
 // --------------- App lifecycle ---------------

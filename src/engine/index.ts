@@ -2,7 +2,7 @@
  * Engine 统一导出
  */
 
-export { createScene, renderFrame, resizeRenderer, updateControls } from './renderer';
+export { createScene, renderFrame, resizeRenderer, updateControls, setupAvatarDrag } from './renderer';
 export type { SceneContext, RendererOptions } from './renderer';
 export { loadVrm, attachVrmToGroup } from './loadVrm';
 export type { LoadVrmOptions, LoadVrmResult } from './loadVrm';

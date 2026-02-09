@@ -113,6 +113,98 @@ export function renderFrame(ctx: SceneContext): void {
   ctx.renderer.render(ctx.scene, ctx.camera);
 }
 
+/** Avatar 拖拽状态 */
+interface DragState {
+  isDragging: boolean;
+  startMouseX: number;
+  startMouseY: number;
+  windowStartX: number;
+  windowStartY: number;
+}
+
+/**
+ * 为 Canvas 添加 Avatar 拖拽功能（拖拽时移动窗口）
+ * 仅在 Electron 模式下生效
+ */
+export function setupAvatarDrag(
+  canvas: HTMLCanvasElement,
+  ctx: SceneContext,
+  avatarGroup: THREE.Group
+): () => void {
+  if (typeof window === 'undefined' || !window.electronAPI) {
+    return () => {};
+  }
+
+  const raycaster = new THREE.Raycaster();
+  const mouse = new THREE.Vector2();
+  const dragState: DragState = {
+    isDragging: false,
+    startMouseX: 0,
+    startMouseY: 0,
+    windowStartX: 0,
+    windowStartY: 0,
+  };
+
+  function getIntersects(event: MouseEvent): THREE.Intersection[] {
+    const rect = canvas.getBoundingClientRect();
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    raycaster.setFromCamera(mouse, ctx.camera);
+    // 递归检测 avatarGroup 下的所有子对象
+    return raycaster.intersectObjects(avatarGroup.children, true);
+  }
+
+  function onMouseDown(event: MouseEvent) {
+    if (!window.electronAPI) return;
+    const intersects = getIntersects(event);
+    if (intersects.length > 0) {
+      // 点击在 Avatar 上，开始拖拽
+      dragState.isDragging = true;
+      dragState.startMouseX = event.screenX;
+      dragState.startMouseY = event.screenY;
+      // 获取窗口当前位置作为基准
+      const [winX, winY] = window.electronAPI.getOptions().then(() => [0, 0]); // 占位，实际在 move 时获取
+      // 实际获取窗口位置需要通过 IPC，这会有延迟
+      // 改用累加方式更简单
+      ctx.controls.enabled = false; // 拖拽时禁用轨道控制
+      canvas.style.cursor = 'grabbing';
+      // 临时取消点击穿透，确保鼠标事件被正确处理
+      window.electronAPI.setIgnoreMouseEvents(true, { forward: true });
+    }
+  }
+
+  function onMouseMove(event: MouseEvent) {
+    if (!window.electronAPI || !dragState.isDragging) return;
+    // 使用 screen 坐标避免窗口移动后参考系变化的问题
+    const dx = event.movementX;
+    const dy = event.movementY;
+    if (dx === 0 && dy === 0) return;
+    // 直接用 movementX/movementY 更可靠
+    window.electronAPI.moveWindow(dx, dy);
+  }
+
+  function onMouseUp() {
+    if (dragState.isDragging) {
+      dragState.isDragging = false;
+      ctx.controls.enabled = true; // 恢复轨道控制
+      canvas.style.cursor = 'auto';
+      // 恢复点击穿透状态
+      window.electronAPI.setIgnoreMouseEvents(false, { forward: true });
+    }
+  }
+
+  canvas.addEventListener('mousedown', onMouseDown);
+  window.addEventListener('mousemove', onMouseMove);
+  window.addEventListener('mouseup', onMouseUp);
+
+  // 返回清理函数
+  return () => {
+    canvas.removeEventListener('mousedown', onMouseDown);
+    window.removeEventListener('mousemove', onMouseMove);
+    window.removeEventListener('mouseup', onMouseUp);
+  };
+}
+
 /**
  * 更新渲染器尺寸
  */

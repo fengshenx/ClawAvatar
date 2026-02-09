@@ -20,6 +20,7 @@ import {
   applyLookAt,
   applyAnimationParams,
   applyHeadBoneMotion,
+  setupAvatarDrag,
 } from '@/engine';
 import type { VrmaEntry } from '@/engine';
 import type { SceneContext } from '@/engine';
@@ -64,6 +65,7 @@ export function useAvatarScene(options: UseAvatarSceneOptions) {
   const [error, setError] = useState<string | null>(null);
   const [clipNames, setClipNames] = useState<string[]>([]);
   const availableExpressionsRef = useRef<string[]>([]);
+  const dragCleanupRef = useRef<(() => void) | null>(null);
 
   function playClipAtFrame(actions: THREE.AnimationAction[], frame: number): void {
     const action = actions[0];
@@ -86,6 +88,10 @@ export function useAvatarScene(options: UseAvatarSceneOptions) {
 
     const ctx = createScene({ canvas, width, height, enableControls: !isElectron() });
     ctxRef.current = ctx;
+    // Electron 模式下设置 Avatar 拖拽（拖拽时移动窗口）
+    if (isElectron()) {
+      dragCleanupRef.current = setupAvatarDrag(canvas, ctx, ctx.avatarGroup);
+    }
 
     loadVrm({ url: vrmUrl })
       .then(async ({ vrm, gltf }) => {
@@ -287,6 +293,8 @@ export function useAvatarScene(options: UseAvatarSceneOptions) {
 
     return () => {
       disposed = true;
+      dragCleanupRef.current?.();
+      dragCleanupRef.current = null;
       ctxRef.current = null;
       vrmRef.current = null;
       mixerRef.current = null;

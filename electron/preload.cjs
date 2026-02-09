@@ -13,6 +13,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   /** 供 hover 区域使用：鼠标进入时取消穿透，离开时恢复穿透（由前端根据 clickThrough 状态调用） */
   setIgnoreMouseEvents: (ignore, options) =>
     ipcRenderer.send('electron:setIgnoreMouseEvents', ignore, options),
+
+  /** 拖拽 Avatar 时移动窗口 */
+  moveWindow: (dx, dy) => ipcRenderer.send('electron:moveWindow', dx, dy),
 });
 
 /** V4：OpenClaw Channel 鉴权 token（主进程从 AVATAR_TOKEN 环境变量读取） */

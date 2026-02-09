@@ -21,6 +21,8 @@ interface ElectronAPI {
   setClickThrough: (value: boolean) => Promise<void>;
   setDockEdge: (edge: 'left' | 'right' | 'top' | null) => Promise<void>;
   setIgnoreMouseEvents: (ignore: boolean, options?: { forward?: boolean }) => void;
+  /** 移动窗口（dx, dy 为偏移量） */
+  moveWindow: (dx: number, dy: number) => void;
 }
 
 /** Avatar Channel 鉴权等（V4：Electron 下由 preload 暴露） */
