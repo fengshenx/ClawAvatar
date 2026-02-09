@@ -1,5 +1,5 @@
 /**
- * 前端状态机：currentState (idle | thinking | speaking)
+ * 前端状态机：currentState (idle | tool_running | error)
  * 与 protocol 解耦，可由按钮或后续 WS 事件更新
  */
 

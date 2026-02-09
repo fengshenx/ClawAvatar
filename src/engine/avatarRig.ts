@@ -5,7 +5,6 @@
 
 import * as THREE from 'three';
 import type { VRM } from '@pixiv/three-vrm';
-import type { AgentStateType } from '@/protocol/types';
 import type { AnimationParams } from '@/app/mapping';
 
 /** 可选：BlendShape 名称与 emotion 的映射（按 VRM 规范，若无则用骨骼/简单动画替代） */
@@ -79,7 +78,7 @@ export function applyLookAt(
 }
 
 /**
- * 周期性眨眼：idle 时每隔若干秒闭眼一瞬（若模型有 blink BlendShape）
+ * 周期性眨眼：每隔若干秒闭眼一瞬（若模型有 blink BlendShape）
  * 返回 0~1，1 表示完全闭上
  */
 const BLINK_INTERVAL = 3.2;
@@ -95,13 +94,11 @@ export function periodicBlinkValue(time: number): number {
 
 /**
  * 眨眼（若有 BlendShape）
- * idle 时使用周期性眨眼；其他状态由外部传入的 blinkWeight 决定
  */
 export function applyBlink(
   vrm: VRM,
   blinkWeight: number,
-  time: number,
-  state: AgentStateType
+  time: number
 ): void {
   const expressionManager = vrm.expressionManager;
   if (!expressionManager) return;
@@ -109,30 +106,8 @@ export function applyBlink(
   const blink = expressionManager.getExpression('blink');
   if (!blink) return;
 
-  const usePeriodic = state === 'idle' || state === 'error';
-  const value = usePeriodic
-    ? periodicBlinkValue(time) * Math.max(0, Math.min(1, blinkWeight))
-    : Math.max(0, Math.min(1, blinkWeight));
+  const value = periodicBlinkValue(time) * Math.max(0, Math.min(1, blinkWeight));
   expressionManager.setValue('blink', value);
-}
-
-/**
- * 嘴部开合（speaking 时，无 TTS 时用周期动画）
- */
-export function applyMouth(vrm: VRM, speakingWeight: number, time: number): void {
-  const expressionManager = vrm.expressionManager;
-  if (!expressionManager) return;
-
-  const aa = expressionManager.getExpression('aa');
-  const oh = expressionManager.getExpression('oh');
-  if (aa) {
-    const cycle = Math.sin(time * 4) * 0.5 + 0.5;
-    expressionManager.setValue('aa', cycle * Math.max(0, Math.min(1, speakingWeight)));
-  }
-  if (oh) {
-    const cycle = Math.sin(time * 4 + 0.5) * 0.5 + 0.5;
-    expressionManager.setValue('oh', cycle * Math.max(0, Math.min(1, speakingWeight)));
-  }
 }
 
 /**
@@ -145,30 +120,6 @@ export function applyAnimationParams(
   lookAtTarget: THREE.Vector3 | null
 ): void {
   applyEmotion(vrm, params.emotion, params.intensity);
-  applyBlink(vrm, params.blinkWeight, time, params.state);
+  applyBlink(vrm, params.blinkWeight, time);
   applyLookAt(vrm, lookAtTarget);
-  applyMouth(vrm, params.speakingWeight, time);
-}
-
-/**
- * 头部骨骼额外旋转（在 vrm.update() 之后调用，叠加在 LookAt 之上）
- * 使点头/歪头更明显，且不依赖 BlendShape
- */
-export function applyHeadBoneMotion(
-  vrm: VRM,
-  params: AnimationParams,
-  time: number
-): void {
-  const humanoid = vrm.humanoid;
-  if (!humanoid) return;
-  const head = humanoid.getRawBoneNode('head');
-  if (!head) return;
-
-  const tiltX = Math.sin(time * 0.8) * 0.1 * params.thinkingWeight;
-  const tiltY = Math.sin(time * 0.6) * 0.08 * params.thinkingWeight;
-  const nodX = Math.sin(time * 3) * 0.12 * params.speakingWeight;
-
-  const q = new THREE.Quaternion();
-  q.setFromEuler(new THREE.Euler(tiltX + nodX, tiltY, 0, 'XYZ'));
-  head.quaternion.multiply(q);
 }

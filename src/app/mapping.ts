@@ -13,10 +13,6 @@ export interface AnimationParams {
   breathingWeight: number;
   /** 眨眼权重 0~1（若有 BlendShape） */
   blinkWeight: number;
-  /** 思考态：视线偏移/歪头强度 0~1 */
-  thinkingWeight: number;
-  /** 说话态：嘴部/点头强度 0~1 */
-  speakingWeight: number;
   /** 全局强度，用于平滑过渡 */
   intensity: number;
   /** 表情名，供 BlendShape 使用 */
@@ -26,9 +22,7 @@ export interface AnimationParams {
 const DEFAULT_PARAMS: AnimationParams = {
   state: 'idle',
   breathingWeight: 1,
-  blinkWeight: 0,
-  thinkingWeight: 0,
-  speakingWeight: 0,
+  blinkWeight: 1,
   intensity: 0.8,
   emotion: 'neutral',
 };
@@ -52,39 +46,16 @@ export function stateToAnimationParams(
     case 'idle':
       params.breathingWeight = 1;
       params.blinkWeight = 1;
-      params.thinkingWeight = 0;
-      params.speakingWeight = 0;
-      break;
-    case 'thinking':
-      params.breathingWeight = 0.6;
-      params.blinkWeight = 0.8;
-      params.thinkingWeight = 1;
-      params.speakingWeight = 0;
-      break;
-    case 'speaking':
-      params.breathingWeight = 0.5;
-      params.blinkWeight = 0.7;
-      params.thinkingWeight = 0;
-      params.speakingWeight = 1;
       break;
     case 'tool_running':
       params.breathingWeight = 0.6;
       params.blinkWeight = 0.8;
-      params.thinkingWeight = 0.7;
-      params.speakingWeight = 0;
       break;
     case 'error':
       params.breathingWeight = 0.8;
       params.blinkWeight = 1;
-      params.thinkingWeight = 0;
-      params.speakingWeight = 0;
       params.intensity = Math.min(params.intensity, 0.5);
       break;
-    default:
-      params.breathingWeight = 1;
-      params.blinkWeight = 1;
-      params.thinkingWeight = 0;
-      params.speakingWeight = 0;
   }
 
   return params;
@@ -107,8 +78,6 @@ export function lerpAnimationParams(
     state: target.state,
     breathingWeight: clamp(current.breathingWeight, target.breathingWeight),
     blinkWeight: clamp(current.blinkWeight, target.blinkWeight),
-    thinkingWeight: clamp(current.thinkingWeight, target.thinkingWeight),
-    speakingWeight: clamp(current.speakingWeight, target.speakingWeight),
     intensity: clamp(current.intensity, target.intensity),
     emotion: target.emotion,
   };

@@ -50,9 +50,7 @@ function normalizeEmotion(value: string | undefined): EmotionType | undefined {
 }
 
 function deriveWireState(action: string | undefined): RenderMessage['state'] {
-  const a = (action || '').trim().toLowerCase();
-  if (a === 'thinking') return 'thinking';
-  if (a === 'talking') return 'speaking';
+  // 简化状态：统一返回 idle，thinking/talking 相关的微动画已移除
   return 'idle';
 }
 

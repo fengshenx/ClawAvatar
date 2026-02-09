@@ -2,11 +2,9 @@
  * V1 事件协议类型定义（与 roadmap 一致，便于后续替换为 WS 事件）
  */
 
-/** 前端内部状态（mapping / 动画用），V4 增加 tool_running、error */
+/** 前端内部状态（mapping / 动画用） */
 export type AgentStateType =
   | 'idle'
-  | 'thinking'
-  | 'speaking'
   | 'tool_running'
   | 'error';
 

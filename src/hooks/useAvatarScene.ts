@@ -19,7 +19,6 @@ import {
   applyStateMotion,
   applyLookAt,
   applyAnimationParams,
-  applyHeadBoneMotion,
   setupAvatarDrag,
 } from '@/engine';
 import type { VrmaEntry } from '@/engine';
@@ -383,11 +382,6 @@ export function useAvatarScene(options: UseAvatarSceneOptions) {
       // Ensure expression values written this frame are applied immediately.
       if (vrm.update) {
         vrm.update(dt);
-      }
-
-      if (!isClipPlaying) {
-        const params = stateToAnimationParams(current.state, current.intensity, current.emotion);
-        applyHeadBoneMotion(vrm, params, time);
       }
 
       renderFrame(ctx);

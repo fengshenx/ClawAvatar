@@ -16,14 +16,10 @@ export {
   applyEmotion,
   applyLookAt,
   applyBlink,
-  applyMouth,
   applyAnimationParams,
-  applyHeadBoneMotion,
   periodicBlinkValue,
 } from './avatarRig';
 export {
   breathingOffset,
-  thinkingHeadTilt,
-  speakingNod,
   applyStateMotion,
 } from './animation';
