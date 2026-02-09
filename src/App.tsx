@@ -11,8 +11,8 @@ import { DemoButtons } from '@/ui/DemoButtons';
 import { ClipButtons } from '@/ui/ClipButtons';
 import { ConnectionStatus } from '@/ui/ConnectionStatus';
 import { UserInput } from '@/ui/UserInput';
-import { ElectronControls } from '@/ui/ElectronControls';
 import { ExpressionButtons } from '@/ui/ExpressionButtons';
+import { AvatarStatusIndicator } from '@/ui/AvatarStatusIndicator';
 import { isElectron } from '@/config';
 import { useElectronAvatarPlugin } from '@/hooks/useElectronAvatarPlugin';
 
@@ -70,6 +70,7 @@ function App() {
       )}
       <div className="app__canvas-wrap">
         <canvas ref={canvasRef} className="app__canvas" />
+        {electronMode && <AvatarStatusIndicator status={plugin.status} />}
         {loading && (
           <div className="app__overlay">
             <span>加载 VRM 中…</span>
@@ -82,48 +83,30 @@ function App() {
           </div>
         )}
       </div>
-      <aside
-        className="app__controls"
-        onMouseEnter={handleControlsMouseEnter}
-        onMouseLeave={handleControlsMouseLeave}
-      >
-        {electronMode ? (
-          <ElectronControls
-            clipNames={clipNames}
-            onPlayClip={onPlayClip}
-            onGetAvailableExpressions={getAvailableExpressions}
-            pluginStatus={plugin.status}
-            pluginBusy={plugin.busy}
-            onPluginConnect={plugin.connect}
-            onPluginDisconnect={plugin.disconnect}
-            onPluginClearPairing={plugin.clearPairing}
+      {!electronMode && (
+        <aside
+          className="app__controls"
+          onMouseEnter={handleControlsMouseEnter}
+          onMouseLeave={handleControlsMouseLeave}
+        >
+          <ConnectionStatus
+            status={wsStatus}
+            error={wsError}
+            wsUrl={wsUrl}
+            onConnect={wsConnect}
+            onDisconnect={wsDisconnect}
           />
-        ) : (
-          <>
-            <ConnectionStatus
-              status={wsStatus}
-              error={wsError}
-              wsUrl={wsUrl}
-              onConnect={wsConnect}
-              onDisconnect={wsDisconnect}
-            />
-            <UserInput
-              sessionId={sessionId}
-              disabled={wsStatus !== 'connected'}
-              onSend={sendUserInput}
-            />
-            <ClipButtons clipNames={clipNames} onPlayClip={onPlayClip} />
-            <ExpressionButtons onGetAvailableExpressions={getAvailableExpressions} />
-            <DemoButtons />
-          </>
-        )}
-      </aside>
-      {electronMode && (
-        <div className="app__electron-hint" title="视图选项请使用菜单栏「视图」">
-          ClawAvatar 桌面端
-        </div>
+          <UserInput
+            sessionId={sessionId}
+            disabled={wsStatus !== 'connected'}
+            onSend={sendUserInput}
+          />
+          <ClipButtons clipNames={clipNames} onPlayClip={onPlayClip} />
+          <ExpressionButtons onGetAvailableExpressions={getAvailableExpressions} />
+          <DemoButtons />
+        </aside>
       )}
-    </div>
+          </div>
   );
 }
 

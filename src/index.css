@@ -383,82 +383,136 @@ body {
 }
 
 /* Electron popup buttons */
-.popup-btn {
-  padding: 6px 12px;
-  border: 1px solid #475569;
-  border-radius: 6px;
-  background: #0f172a;
-  color: #94a3b8;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.popup-btn:hover {
-  background: #1e293b;
-  color: #e2e8f0;
-  border-color: #64748b;
-}
-
-/* Electron controls */
-.electron-controls {
-  max-width: 480px;
-  margin: 0 auto;
-}
-
-.electron-controls__pairing {
-  margin-bottom: 8px;
-  padding: 8px;
-  border: 1px solid rgba(71, 85, 105, 0.7);
-  border-radius: 8px;
-  background: rgba(15, 23, 42, 0.75);
-}
-
-.electron-controls__pairing-row {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 6px;
-  font-size: 11px;
-  color: #94a3b8;
-}
-
-.electron-controls__token {
-  flex: 1;
-  min-width: 0;
-  padding: 6px 8px;
-  border: 1px solid #334155;
-  border-radius: 6px;
-  background: #020617;
-  color: #e2e8f0;
-  font-size: 12px;
-  -webkit-app-region: no-drag;
-  app-region: no-drag;
-  user-select: text;
-}
-
-.electron-controls__pairing-meta {
-  display: flex;
-  gap: 6px;
-  flex-direction: column;
-  font-size: 10px;
-  color: #64748b;
-  margin-top: 2px;
-  word-break: break-all;
-}
-
-.electron-controls__pairing-error {
-  margin-top: 6px;
-  font-size: 11px;
-  color: #fca5a5;
-}
-
-.electron-controls__row {
-  display: flex;
-  gap: 8px;
-}
-
 .app--electron .app__canvas-wrap {
   inset: 28px 0 0 0;
+}
+
+/* Avatar 状态指示器（左下角小圆点） */
+.avatar-status-indicator {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  z-index: 20;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+.avatar-status-indicator__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s;
+  outline: none;
+  background: none;
+  padding: 0;
+}
+
+.avatar-status-indicator__dot--connected {
+  background: #22c55e;
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.5);
+}
+
+.avatar-status-indicator__dot--connected:hover {
+  transform: scale(1.2);
+}
+
+.avatar-status-indicator__dot--connecting {
+  background: #fbbf24;
+  animation: avatar-status-pulse 1s ease-in-out infinite;
+}
+
+.avatar-status-indicator__dot--error {
+  background: #ef4444;
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.5);
+}
+
+.avatar-status-indicator__dot--error:hover {
+  transform: scale(1.2);
+}
+
+.avatar-status-indicator__dot--idle {
+  background: #64748b;
+  opacity: 0.4;
+}
+
+.avatar-status-indicator__dot--idle:hover {
+  opacity: 0.6;
+}
+
+@keyframes avatar-status-pulse {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 6px rgba(251, 191, 36, 0.5);
+  }
+  50% {
+    opacity: 0.5;
+    box-shadow: 0 0 3px rgba(251, 191, 36, 0.3);
+  }
+}
+
+.avatar-status-indicator__dropdown {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  margin-bottom: 8px;
+  padding: 8px 10px;
+  background: rgba(30, 41, 59, 0.95);
+  border-radius: 6px;
+  min-width: 180px;
+}
+
+.avatar-status-indicator__info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #e2e8f0;
+}
+
+.avatar-status-indicator__status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.avatar-status-indicator__status-dot--connected {
+  background: #22c55e;
+}
+
+.avatar-status-indicator__status-dot--connecting {
+  background: #fbbf24;
+}
+
+.avatar-status-indicator__status-dot--error {
+  background: #ef4444;
+}
+
+.avatar-status-indicator__status-dot--idle {
+  background: #64748b;
+}
+
+.avatar-status-indicator__meta {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid #334155;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.avatar-status-indicator__key {
+  font-size: 11px;
+  color: #94a3b8;
+  font-family: ui-monospace, monospace;
+}
+
+.avatar-status-indicator__url {
+  font-size: 10px;
+  color: #64748b;
+  font-family: ui-monospace, monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
