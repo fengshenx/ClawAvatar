@@ -2,7 +2,7 @@
  * Electron 主进程 - ClawAvatar 桌面端
  * 优先针对 macOS 优化：常驻、置顶、贴边吸附、点击穿透
  */
-import { app, BrowserWindow, screen, ipcMain, Menu, clipboard } from 'electron';
+import { app, BrowserWindow, screen, ipcMain, Menu, clipboard, protocol } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { AvatarPluginClient } from './avatarPlugin.mjs';
@@ -26,6 +26,23 @@ let avatarPluginClient = null;
 let dockEdge = null;
 let alwaysOnTop = true;
 let clickThrough = false;
+
+// --------------- Custom Protocol ---------------
+// 注册 electron-local:// 协议来绕过 file:// 的 CORS 限制
+const localProtocol = 'electron-local';
+const distPath = path.join(__dirname, '../dist');
+
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: localProtocol,
+    privileges: {
+      secure: true,
+      supportFetchAPI: true,
+      corsEnabled: true,
+    },
+  },
+]);
+// ------------------------------------------------
 
 function getWorkArea() {
   const primary = screen.getPrimaryDisplay();
@@ -370,6 +387,13 @@ ipcMain.on('electron:moveWindow', (event, dx, dy) => {
 
 // --------------- App lifecycle ---------------
 app.whenReady().then(() => {
+  // 注册本地协议（必须在 app ready 后调用）
+  protocol.registerFileProtocol(localProtocol, (request, callback) => {
+    const url = request.url.replace(`${localProtocol}://`, '');
+    const filePath = path.join(distPath, url);
+    callback(filePath);
+  });
+
   avatarPluginClient = new AvatarPluginClient({
     app,
     onEvent: (event) => broadcastAvatarEvent(event),

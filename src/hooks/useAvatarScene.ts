@@ -40,6 +40,16 @@ import {
   type AnimationParams,
 } from '@/app/mapping';
 
+// 在 Electron 生产模式下使用自定义协议绕过 CORS
+function resolveVrmUrl(url: string): string {
+  if (isElectron()) {
+    // 去掉前导斜杠，替换为自定义协议
+    const path = url.replace(/^\//, '');
+    return `electron-local://${path}`;
+  }
+  return url;
+}
+
 const DEFAULT_VRM_URL = '/models/avatar.glb';
 
 export interface UseAvatarSceneOptions {
@@ -144,7 +154,9 @@ export function useAvatarScene(options: UseAvatarSceneOptions) {
       dragCleanupRef.current = setupAvatarDrag(canvas, ctx, ctx.avatarGroup);
     }
 
-    loadVrm({ url: vrmUrl })
+    // 在 Electron 生产模式下使用自定义协议
+    const resolvedUrl = resolveVrmUrl(vrmUrl);
+    loadVrm({ url: resolvedUrl })
       .then(async ({ vrm, gltf }) => {
         if (disposed || loadSessionRef.current !== sessionId) return;
         vrmRef.current = vrm;
@@ -203,8 +215,9 @@ export function useAvatarScene(options: UseAvatarSceneOptions) {
     async function loadVrmaFromManifest(vrm: VRM) {
       type Manifest = { animations?: { name: string; url: string }[] };
       let list: { name: string; url: string }[] = [];
+      const manifestUrl = resolveVrmUrl('/animations/manifest.json');
       try {
-        const res = await fetch('/animations/manifest.json');
+        const res = await fetch(manifestUrl);
         if (disposed || loadSessionRef.current !== sessionId) return;
         if (res.ok) {
           const data = (await res.json()) as Manifest;
@@ -219,7 +232,8 @@ export function useAvatarScene(options: UseAvatarSceneOptions) {
       for (const item of list) {
         if (disposed || loadSessionRef.current !== sessionId) return;
         try {
-          const gltf = await loadVrma(item.url);
+          const resolvedVrmaUrl = resolveVrmUrl(item.url);
+          const gltf = await loadVrma(resolvedVrmaUrl);
           if (disposed || loadSessionRef.current !== sessionId) return;
           const anims = gltf.userData?.vrmAnimations;
           if (Array.isArray(anims) && anims.length > 0) {

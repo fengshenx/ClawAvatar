@@ -44,7 +44,7 @@ function App() {
         {error && (
           <div className="app__overlay app__overlay--error">
             <span>{error}</span>
-            <p className="app__hint">请将 .vrm 文件放入 public/models/avatar.vrm</p>
+            <p className="app__hint">请将 avatar.glb 文件放入 public/models/ 目录</p>
           </div>
         )}
       </div>
