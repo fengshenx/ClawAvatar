@@ -17,7 +17,15 @@ export type WireStateType =
   | 'typing';
 
 /** 表情（V1 可简化使用） */
-export type EmotionType = 'neutral' | 'happy' | 'sad' | 'angry' | 'surprised';
+export type EmotionType =
+  | 'neutral'
+  | 'happy'
+  | 'sad'
+  | 'angry'
+  | 'surprised'
+  | 'relaxed'
+  | 'sorry'
+  | 'confused';
 
 /** 状态切换消息：agent_state（state 含 typing/listening 时前端映射为 idle） */
 export interface AgentStateMessage {

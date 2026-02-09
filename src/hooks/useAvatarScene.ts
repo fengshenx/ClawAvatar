@@ -61,6 +61,7 @@ export function useAvatarScene(options: UseAvatarSceneOptions) {
   const activeClipIndexRef = useRef<number | null>(null);
   const loadSessionRef = useRef(0);
   const animParamsRef = useRef<AnimationParams>(stateToAnimationParams('idle', 0.8, 'neutral'));
+  const lastGestureSeqRef = useRef(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [clipNames, setClipNames] = useState<string[]>([]);
@@ -302,6 +303,7 @@ export function useAvatarScene(options: UseAvatarSceneOptions) {
       clipNamesRef.current = [];
       actionsRef.current = [];
       activeClipIndexRef.current = null;
+      lastGestureSeqRef.current = 0;
     };
   }, [vrmUrl, width, height]);
 
@@ -334,8 +336,17 @@ export function useAvatarScene(options: UseAvatarSceneOptions) {
         vrm.update(dt);
       }
 
+      const current = useAppStore.getState().current;
+      if (
+        current.gestureSeq > lastGestureSeqRef.current &&
+        current.gesture &&
+        playClipRef.current
+      ) {
+        lastGestureSeqRef.current = current.gestureSeq;
+        playClipRef.current(current.gesture);
+      }
+
       if (!isClipPlaying) {
-        const current = useAppStore.getState().current;
         const targetParams = stateToAnimationParams(
           current.state,
           current.intensity,
@@ -355,7 +366,6 @@ export function useAvatarScene(options: UseAvatarSceneOptions) {
       } else {
         // 播放 clip 时仍保持眼神朝向相机，避免视线停在过期目标或被异常轨道锁住
         applyLookAt(vrm, ctx.camera.position.clone());
-        const current = useAppStore.getState().current;
         const params = stateToAnimationParams(current.state, current.intensity, current.emotion);
         applyAnimationParams(vrm, params, time, ctx.camera.position.clone());
         updateControls(ctx, dt);

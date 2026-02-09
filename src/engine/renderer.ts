@@ -29,8 +29,6 @@ export interface SceneContext {
   cameraPosition: THREE.Vector3;
 }
 
-const DEFAULT_BG = 0x1a1a2e;
-
 /**
  * 创建场景、相机、渲染器与 avatar 容器
  */
@@ -135,10 +133,6 @@ export function setupAvatarDrag(
   const mouse = new THREE.Vector2();
   const dragState: DragState = {
     isDragging: false,
-    startMouseX: 0,
-    startMouseY: 0,
-    windowStartX: 0,
-    windowStartY: 0,
   };
 
   function getIntersects(event: MouseEvent): THREE.Intersection[] {
@@ -158,8 +152,8 @@ export function setupAvatarDrag(
       dragState.isDragging = true;
       ctx.controls.enabled = false; // 拖拽时禁用轨道控制
       canvas.style.cursor = 'grabbing';
-      // 临时取消点击穿透，确保鼠标事件被正确处理
-      window.electronAPI.setIgnoreMouseEvents(true, { forward: true });
+      // 拖拽期间确保窗口可接收鼠标事件
+      window.electronAPI.setIgnoreMouseEvents(false, { forward: false });
     }
   }
 
@@ -179,7 +173,7 @@ export function setupAvatarDrag(
       ctx.controls.enabled = true; // 恢复轨道控制
       canvas.style.cursor = 'auto';
       // 恢复点击穿透状态
-      window.electronAPI.setIgnoreMouseEvents(false, { forward: true });
+      window.electronAPI?.setIgnoreMouseEvents(false, { forward: true });
     }
   }
 

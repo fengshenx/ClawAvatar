@@ -21,7 +21,7 @@ export interface UseAvatarWsResult {
   wsUrl: string;
 }
 
-export function useAvatarWs(): UseAvatarWsResult {
+export function useAvatarWs(enabled = true): UseAvatarWsResult {
   const [status, setStatus] = useState<AvatarWsStatus>('idle');
   const [error, setError] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState('');
@@ -30,6 +30,11 @@ export function useAvatarWs(): UseAvatarWsResult {
   const wsUrl = getAvatarWsUrl();
 
   useEffect(() => {
+    if (!enabled) {
+      setStatus('idle');
+      setError(null);
+      return undefined;
+    }
     const client = createAvatarWsClient(
       wsUrl,
       {
@@ -49,9 +54,10 @@ export function useAvatarWs(): UseAvatarWsResult {
       clientRef.current = null;
       setSessionId('');
     };
-  }, [wsUrl, applyMessage]);
+  }, [enabled, wsUrl, applyMessage]);
 
   const connect = useCallback(() => {
+    if (!enabled) return;
     if (clientRef.current) {
       clientRef.current.connect();
     } else {
@@ -70,7 +76,7 @@ export function useAvatarWs(): UseAvatarWsResult {
       clientRef.current = client;
       client.connect();
     }
-  }, [wsUrl, applyMessage]);
+  }, [enabled, wsUrl, applyMessage]);
 
   const disconnect = useCallback(() => {
     clientRef.current?.disconnect();

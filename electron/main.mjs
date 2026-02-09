@@ -2,13 +2,15 @@
  * Electron 主进程 - ClawAvatar 桌面端
  * 优先针对 macOS 优化：常驻、置顶、贴边吸附、点击穿透
  */
-import { app, BrowserWindow, screen, ipcMain, Menu } from 'electron';
+import { app, BrowserWindow, screen, ipcMain, Menu, clipboard } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { AvatarPluginClient } from './avatarPlugin.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const isMac = process.platform === 'darwin';
 const isDev = process.env.ELECTRON_DEV === '1' || process.argv.includes('--dev');
+const shouldOpenDevTools = process.env.ELECTRON_OPEN_DEVTOOLS === '1';
 
 const WIN_WIDTH = 320;
 const WIN_HEIGHT = 420;
@@ -17,6 +19,8 @@ const SNAP_THRESHOLD = 24; // 距离边缘多少 px 内触发吸附
 
 /** @type {BrowserWindow | null} */
 let mainWindow = null;
+/** @type {AvatarPluginClient | null} */
+let avatarPluginClient = null;
 
 /** 贴边：'left' | 'right' | 'top' | null */
 let dockEdge = null;
@@ -61,7 +65,9 @@ function createWindow() {
 
   if (isDev) {
     mainWindow.loadURL('http://localhost:5173');
-    mainWindow.webContents.openDevTools({ mode: 'detach' });
+    if (shouldOpenDevTools) {
+      mainWindow.webContents.openDevTools({ mode: 'detach' });
+    }
   } else {
     mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
   }
@@ -273,11 +279,47 @@ function updateMenu() {
   Menu.setApplicationMenu(menu);
 }
 
+function broadcastAvatarStatus(status) {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  mainWindow.webContents.send('avatar:pluginStatus', status);
+}
+
+function broadcastAvatarEvent(event) {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  mainWindow.webContents.send('avatar:pluginEvent', event);
+}
+
 // --------------- IPC ---------------
 ipcMain.handle('electron:getPlatform', () => process.platform);
+ipcMain.handle('electron:readClipboardText', () => clipboard.readText());
 
 /** V4：渲染进程获取鉴权 token（从环境变量读取，由 Adapter/Gateway 校验） */
 ipcMain.handle('avatar:getToken', () => process.env.AVATAR_TOKEN ?? null);
+ipcMain.handle('avatar:pluginStatus', () => avatarPluginClient?.getStatus() ?? null);
+ipcMain.handle('avatar:pluginCapabilities', () => avatarPluginClient?.getCapabilities() ?? null);
+ipcMain.handle('avatar:pluginSetCapabilities', async (_, capabilities) => {
+  if (!avatarPluginClient) return null;
+  await avatarPluginClient.setCapabilities(capabilities);
+  return avatarPluginClient.getStatus();
+});
+ipcMain.handle('avatar:pluginConnect', async () => {
+  if (!avatarPluginClient) return null;
+  return avatarPluginClient.connect();
+});
+ipcMain.handle('avatar:pluginPair', async (_, bootstrapToken) => {
+  if (!avatarPluginClient) return null;
+  return avatarPluginClient.pair(bootstrapToken);
+});
+ipcMain.handle('avatar:pluginDisconnect', async () => {
+  if (!avatarPluginClient) return null;
+  await avatarPluginClient.disconnect();
+  return avatarPluginClient.getStatus();
+});
+ipcMain.handle('avatar:pluginClearPairing', async () => {
+  if (!avatarPluginClient) return null;
+  await avatarPluginClient.clearPairing();
+  return avatarPluginClient.getStatus();
+});
 
 ipcMain.handle('electron:getOptions', () => ({
   alwaysOnTop,
@@ -328,6 +370,11 @@ ipcMain.on('electron:moveWindow', (event, dx, dy) => {
 
 // --------------- App lifecycle ---------------
 app.whenReady().then(() => {
+  avatarPluginClient = new AvatarPluginClient({
+    app,
+    onEvent: (event) => broadcastAvatarEvent(event),
+    onStatus: (status) => broadcastAvatarStatus(status),
+  });
   createWindow();
   updateMenu();
 });
@@ -338,4 +385,8 @@ app.on('window-all-closed', () => {
 
 app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) createWindow();
+});
+
+app.on('before-quit', async () => {
+  await avatarPluginClient?.disconnect();
 });

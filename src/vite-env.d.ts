@@ -12,6 +12,7 @@ interface ImportMeta {
 /** Electron 桌面端预加载暴露的 API（仅在使用 electron 启动时存在） */
 interface ElectronAPI {
   getPlatform: () => Promise<string>;
+  readClipboardText: () => Promise<string>;
   getOptions: () => Promise<{
     alwaysOnTop: boolean;
     clickThrough: boolean;
@@ -28,6 +29,63 @@ interface ElectronAPI {
 /** Avatar Channel 鉴权等（V4：Electron 下由 preload 暴露） */
 interface AvatarBridge {
   getAvatarToken: () => Promise<string | null>;
+  getPluginStatus: () => Promise<{
+    phase: 'idle' | 'pairing' | 'connecting' | 'connected' | 'error';
+    paired: boolean;
+    lastError: string | null;
+    gatewayUrl: string;
+    sessionKey: string;
+    avatarId: string;
+    connectionId: string;
+    capabilities: {
+      emotions: string[];
+      actions: string[];
+      viseme?: { supported: boolean; mode: string };
+      fallback?: Record<string, string>;
+    };
+  } | null>;
+  getPluginCapabilities: () => Promise<{
+    emotions: string[];
+    actions: string[];
+    viseme?: { supported: boolean; mode: string };
+    fallback?: Record<string, string>;
+  } | null>;
+  setPluginCapabilities: (capabilities: {
+    emotions?: string[];
+    actions?: string[];
+    viseme?: { supported?: boolean; mode?: string };
+    fallback?: Record<string, string>;
+  }) => Promise<unknown>;
+  connectPlugin: () => Promise<unknown>;
+  pairPlugin: (bootstrapToken: string) => Promise<unknown>;
+  disconnectPlugin: () => Promise<unknown>;
+  clearPluginPairing: () => Promise<unknown>;
+  onPluginEvent: (handler: (payload: {
+    eventId?: string;
+    sessionKey?: string;
+    ts?: number;
+    source?: string;
+    emotion?: string;
+    action?: string;
+    intensity?: number;
+    durationMs?: number;
+    text?: string;
+  }) => void) => () => void;
+  onPluginStatus: (handler: (payload: {
+    phase: 'idle' | 'pairing' | 'connecting' | 'connected' | 'error';
+    paired: boolean;
+    lastError: string | null;
+    gatewayUrl: string;
+    sessionKey: string;
+    avatarId: string;
+    connectionId: string;
+    capabilities: {
+      emotions: string[];
+      actions: string[];
+      viseme?: { supported: boolean; mode: string };
+      fallback?: Record<string, string>;
+    };
+  }) => void) => () => void;
 }
 
 declare global {
@@ -36,3 +94,5 @@ declare global {
     avatarBridge?: AvatarBridge;
   }
 }
+
+export {};

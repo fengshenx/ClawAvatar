@@ -31,13 +31,57 @@ interface ElectronControlsProps {
   clipNames: string[];
   onPlayClip: (name: string) => void;
   onGetAvailableExpressions: () => string[];
+  pluginStatus: {
+    phase: 'idle' | 'pairing' | 'connecting' | 'connected' | 'error';
+    paired: boolean;
+    lastError: string | null;
+    sessionKey: string;
+    gatewayUrl: string;
+  };
+  pluginBusy: boolean;
+  onPluginConnect: () => Promise<void>;
+  onPluginDisconnect: () => Promise<void>;
+  onPluginClearPairing: () => Promise<void>;
 }
 
-export function ElectronControls({ clipNames, onPlayClip, onGetAvailableExpressions }: ElectronControlsProps) {
+export function ElectronControls({
+  clipNames,
+  onPlayClip,
+  onGetAvailableExpressions,
+  pluginStatus,
+  pluginBusy,
+  onPluginConnect,
+  onPluginDisconnect,
+  onPluginClearPairing,
+}: ElectronControlsProps) {
   const currentState = useAppStore((s) => s.current.state);
 
   return (
     <div className="electron-controls">
+      <div className="electron-controls__pairing">
+        <div className="electron-controls__pairing-row">
+          <span>Avatar 插件：{pluginStatus.phase}</span>
+          <span>{pluginStatus.paired ? 'paired' : 'not paired'}</span>
+        </div>
+        <div className="electron-controls__pairing-row">
+          <button className="popup-btn" onClick={() => onPluginConnect()} disabled={pluginBusy}>
+            连接
+          </button>
+          <button className="popup-btn" onClick={() => onPluginDisconnect()} disabled={pluginBusy}>
+            断开
+          </button>
+          <button className="popup-btn" onClick={() => onPluginClearPairing()} disabled={pluginBusy}>
+            清理配对
+          </button>
+        </div>
+        <div className="electron-controls__pairing-meta">
+          <span>{pluginStatus.sessionKey}</span>
+          <span>{pluginStatus.gatewayUrl}</span>
+        </div>
+        {pluginStatus.lastError && (
+          <div className="electron-controls__pairing-error">{pluginStatus.lastError}</div>
+        )}
+      </div>
       <div className="electron-controls__row">
         <Dropdown
           trigger={<button className="popup-btn">状态</button>}

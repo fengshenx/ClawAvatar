@@ -4,7 +4,7 @@
  * Electron 桌面端：顶部拖拽条、复用同一套 Web Avatar
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAvatarScene } from '@/hooks/useAvatarScene';
 import { useAvatarWs } from '@/hooks/useAvatarWs';
 import { DemoButtons } from '@/ui/DemoButtons';
@@ -14,6 +14,7 @@ import { UserInput } from '@/ui/UserInput';
 import { ElectronControls } from '@/ui/ElectronControls';
 import { ExpressionButtons } from '@/ui/ExpressionButtons';
 import { isElectron } from '@/config';
+import { useElectronAvatarPlugin } from '@/hooks/useElectronAvatarPlugin';
 
 function useWindowSize() {
   const [size, setSize] = useState({ width: window.innerWidth, height: window.innerHeight });
@@ -26,6 +27,7 @@ function useWindowSize() {
 }
 
 function App() {
+  const electronMode = isElectron();
   const { width, height } = useWindowSize();
   const { canvasRef, loading, error, clipNames, onPlayClip, getAvailableExpressions } = useAvatarScene({
     width,
@@ -39,11 +41,31 @@ function App() {
     sendUserInput,
     sessionId,
     wsUrl,
-  } = useAvatarWs();
+  } = useAvatarWs(!electronMode);
+  const [expressionNames, setExpressionNames] = useState<string[]>([]);
+  const plugin = useElectronAvatarPlugin(clipNames, expressionNames);
+
+  useEffect(() => {
+    setExpressionNames(getAvailableExpressions());
+  }, [clipNames, getAvailableExpressions]);
+
+  const handleControlsMouseEnter = useCallback(() => {
+    if (!electronMode || !window.electronAPI) return;
+    window.electronAPI.setIgnoreMouseEvents(false, { forward: false });
+  }, [electronMode]);
+
+  const handleControlsMouseLeave = useCallback(() => {
+    if (!electronMode || !window.electronAPI) return;
+    void window.electronAPI.getOptions().then((opts) => {
+      window.electronAPI?.setIgnoreMouseEvents(Boolean(opts?.clickThrough), {
+        forward: Boolean(opts?.clickThrough),
+      });
+    });
+  }, [electronMode]);
 
   return (
-    <div className={`app${isElectron() ? ' app--electron' : ''}`}>
-      {isElectron() && (
+    <div className={`app${electronMode ? ' app--electron' : ''}`}>
+      {electronMode && (
         <div className="app__drag-bar" title="拖拽移动窗口" />
       )}
       <div className="app__canvas-wrap">
@@ -60,12 +82,21 @@ function App() {
           </div>
         )}
       </div>
-      <aside className="app__controls">
-        {isElectron() ? (
+      <aside
+        className="app__controls"
+        onMouseEnter={handleControlsMouseEnter}
+        onMouseLeave={handleControlsMouseLeave}
+      >
+        {electronMode ? (
           <ElectronControls
             clipNames={clipNames}
             onPlayClip={onPlayClip}
             onGetAvailableExpressions={getAvailableExpressions}
+            pluginStatus={plugin.status}
+            pluginBusy={plugin.busy}
+            onPluginConnect={plugin.connect}
+            onPluginDisconnect={plugin.disconnect}
+            onPluginClearPairing={plugin.clearPairing}
           />
         ) : (
           <>
@@ -87,7 +118,7 @@ function App() {
           </>
         )}
       </aside>
-      {isElectron() && (
+      {electronMode && (
         <div className="app__electron-hint" title="视图选项请使用菜单栏「视图」">
           ClawAvatar 桌面端
         </div>
