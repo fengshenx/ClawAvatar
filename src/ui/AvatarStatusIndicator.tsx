@@ -3,10 +3,10 @@
  */
 
 import { useState, useRef, useEffect } from 'react';
-import type { AvatarPluginStatus } from '@/hooks/useElectronAvatarPlugin';
+import type { PluginStatus } from '@/hooks/useElectronAvatarPlugin';
 
 interface AvatarStatusIndicatorProps {
-  status: AvatarPluginStatus | null;
+  status: PluginStatus | null;
 }
 
 type Phase = 'idle' | 'connecting' | 'connected' | 'error';

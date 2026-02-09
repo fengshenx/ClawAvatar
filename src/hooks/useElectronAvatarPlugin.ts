@@ -6,7 +6,7 @@ const BRIDGE_SESSION_ID = 'avatar-plugin';
 
 type PluginPhase = 'idle' | 'pairing' | 'connecting' | 'connected' | 'error';
 
-interface PluginStatus {
+export interface PluginStatus {
   phase: PluginPhase;
   paired: boolean;
   lastError: string | null;
@@ -49,7 +49,7 @@ function normalizeEmotion(value: string | undefined): EmotionType | undefined {
   return KNOWN_EMOTIONS.includes(v as EmotionType) ? (v as EmotionType) : undefined;
 }
 
-function deriveWireState(action: string | undefined, text: string | undefined): RenderMessage['state'] {
+function deriveWireState(action: string | undefined): RenderMessage['state'] {
   const a = (action || '').trim().toLowerCase();
   if (a === 'thinking') return 'thinking';
   if (a === 'talking') return 'speaking';
@@ -85,7 +85,7 @@ export function useElectronAvatarPlugin(clipNames: string[], expressions: string
       const msg: RenderMessage = {
         type: 'render',
         session_id: BRIDGE_SESSION_ID,
-        state: deriveWireState(gesture, event.text),
+        state: deriveWireState(gesture),
         emotion: normalizeEmotion(event.emotion),
         intensity:
           typeof event.intensity === 'number' && Number.isFinite(event.intensity)

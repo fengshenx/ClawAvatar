@@ -8,10 +8,6 @@
     "dev": "vite",
     "dev:electron": "npx concurrently -n vite,electron \"vite\" \"wait-on http://localhost:5173 && electron . --dev\"",
     "build": "tsc -b && vite build",
-    "preview": "vite preview",
-    "adapter": "node adapter/server.mjs",
-    "dev:all": "npx concurrently -n vite,adapter \"npm run dev\" \"npm run adapter\"",
-    "dev:electron-only": "npx wait-on http://localhost:5173 && electron . --dev",
     "start": "electron .",
     "build:electron": "npm run build && electron ."
   },
@@ -32,7 +28,6 @@
     "electron": "^33.2.0",
     "typescript": "~5.6.2",
     "vite": "^6.0.1",
-    "wait-on": "^8.0.1",
-    "ws": "^8.19.0"
+    "wait-on": "^8.0.1"
   }
 }

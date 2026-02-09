@@ -65,7 +65,6 @@ export function useAvatarScene(options: UseAvatarSceneOptions) {
   const lastGestureSeqRef = useRef(0);
   // 记录上次的状态，用于检测变化时输出日志
   const lastActionNameRef = useRef<string | null>(null);
-  const lastEmotionRef = useRef<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [clipNames, setClipNames] = useState<string[]>([]);
@@ -353,7 +352,6 @@ export function useAvatarScene(options: UseAvatarSceneOptions) {
         playClipRef.current
       ) {
         lastGestureSeqRef.current = current.gestureSeq;
-        const prevAction = lastActionNameRef.current;
         playClipRef.current(current.gesture);
         lastActionNameRef.current = current.gesture;
       }

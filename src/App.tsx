@@ -1,19 +1,10 @@
 /**
- * 主应用：Canvas 全屏 + 底部控制区
- * 数据流：WS/按钮 -> protocol/simulate -> app/state -> mapping -> engine
- * Electron 桌面端：顶部拖拽条、复用同一套 Web Avatar
+ * 主应用：Electron 桌面端
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useAvatarScene } from '@/hooks/useAvatarScene';
-import { useAvatarWs } from '@/hooks/useAvatarWs';
-import { DemoButtons } from '@/ui/DemoButtons';
-import { ClipButtons } from '@/ui/ClipButtons';
-import { ConnectionStatus } from '@/ui/ConnectionStatus';
-import { UserInput } from '@/ui/UserInput';
-import { ExpressionButtons } from '@/ui/ExpressionButtons';
 import { AvatarStatusIndicator } from '@/ui/AvatarStatusIndicator';
-import { isElectron } from '@/config';
 import { useElectronAvatarPlugin } from '@/hooks/useElectronAvatarPlugin';
 
 function useWindowSize() {
@@ -27,21 +18,11 @@ function useWindowSize() {
 }
 
 function App() {
-  const electronMode = isElectron();
   const { width, height } = useWindowSize();
-  const { canvasRef, loading, error, clipNames, onPlayClip, getAvailableExpressions } = useAvatarScene({
+  const { canvasRef, loading, error, clipNames, getAvailableExpressions } = useAvatarScene({
     width,
     height,
   });
-  const {
-    status: wsStatus,
-    error: wsError,
-    connect: wsConnect,
-    disconnect: wsDisconnect,
-    sendUserInput,
-    sessionId,
-    wsUrl,
-  } = useAvatarWs(!electronMode);
   const [expressionNames, setExpressionNames] = useState<string[]>([]);
   const plugin = useElectronAvatarPlugin(clipNames, expressionNames);
 
@@ -49,28 +30,12 @@ function App() {
     setExpressionNames(getAvailableExpressions());
   }, [clipNames, getAvailableExpressions]);
 
-  const handleControlsMouseEnter = useCallback(() => {
-    if (!electronMode || !window.electronAPI) return;
-    window.electronAPI.setIgnoreMouseEvents(false, { forward: false });
-  }, [electronMode]);
-
-  const handleControlsMouseLeave = useCallback(() => {
-    if (!electronMode || !window.electronAPI) return;
-    void window.electronAPI.getOptions().then((opts) => {
-      window.electronAPI?.setIgnoreMouseEvents(Boolean(opts?.clickThrough), {
-        forward: Boolean(opts?.clickThrough),
-      });
-    });
-  }, [electronMode]);
-
   return (
-    <div className={`app${electronMode ? ' app--electron' : ''}`}>
-      {electronMode && (
-        <div className="app__drag-bar" title="拖拽移动窗口" />
-      )}
+    <div className="app">
+      <div className="app__drag-bar" title="拖拽移动窗口" />
       <div className="app__canvas-wrap">
         <canvas ref={canvasRef} className="app__canvas" />
-        {electronMode && <AvatarStatusIndicator status={plugin.status} />}
+        <AvatarStatusIndicator status={plugin.status} />
         {loading && (
           <div className="app__overlay">
             <span>加载 VRM 中…</span>
@@ -83,30 +48,7 @@ function App() {
           </div>
         )}
       </div>
-      {!electronMode && (
-        <aside
-          className="app__controls"
-          onMouseEnter={handleControlsMouseEnter}
-          onMouseLeave={handleControlsMouseLeave}
-        >
-          <ConnectionStatus
-            status={wsStatus}
-            error={wsError}
-            wsUrl={wsUrl}
-            onConnect={wsConnect}
-            onDisconnect={wsDisconnect}
-          />
-          <UserInput
-            sessionId={sessionId}
-            disabled={wsStatus !== 'connected'}
-            onSend={sendUserInput}
-          />
-          <ClipButtons clipNames={clipNames} onPlayClip={onPlayClip} />
-          <ExpressionButtons onGetAvailableExpressions={getAvailableExpressions} />
-          <DemoButtons />
-        </aside>
-      )}
-          </div>
+    </div>
   );
 }
 
