@@ -1,0 +1,25 @@
+{
+  "id": "avatar",
+  "name": "Avatar",
+  "description": "Avatar handshake and expression tool for OpenClaw agents",
+  "skills": ["./skills"],
+  "uiHints": {
+    "enabled": {
+      "label": "Enabled",
+      "help": "Toggle avatar plugin runtime."
+    },
+    "queueLimit": {
+      "label": "Queue Limit",
+      "help": "Max queued avatar events per session.",
+      "advanced": true
+    }
+  },
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "enabled": { "type": "boolean" },
+      "queueLimit": { "type": "integer", "minimum": 16, "maximum": 2048 }
+    }
+  }
+}
