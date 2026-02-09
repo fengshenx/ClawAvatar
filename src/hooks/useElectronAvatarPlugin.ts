@@ -49,7 +49,7 @@ function normalizeEmotion(value: string | undefined): EmotionType | undefined {
   return KNOWN_EMOTIONS.includes(v as EmotionType) ? (v as EmotionType) : undefined;
 }
 
-function deriveWireState(action: string | undefined): RenderMessage['state'] {
+function deriveWireState(): RenderMessage['state'] {
   // 简化状态：统一返回 idle，thinking/talking 相关的微动画已移除
   return 'idle';
 }
@@ -83,7 +83,7 @@ export function useElectronAvatarPlugin(clipNames: string[], expressions: string
       const msg: RenderMessage = {
         type: 'render',
         session_id: BRIDGE_SESSION_ID,
-        state: deriveWireState(gesture),
+        state: deriveWireState(),
         emotion: normalizeEmotion(event.emotion),
         intensity:
           typeof event.intensity === 'number' && Number.isFinite(event.intensity)
