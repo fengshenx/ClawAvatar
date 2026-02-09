@@ -53,8 +53,16 @@ function deriveWireState(action: string | undefined, text: string | undefined): 
   const a = (action || '').trim().toLowerCase();
   if (a === 'thinking') return 'thinking';
   if (a === 'talking') return 'speaking';
-  if (text && text.trim()) return 'speaking';
   return 'idle';
+}
+
+function resolveGestureName(action: string | undefined, clipNames: string[]): string | undefined {
+  if (!action) return undefined;
+  const raw = action.trim();
+  if (!raw) return undefined;
+  const lower = raw.toLowerCase();
+  const matched = clipNames.find((name) => name.trim().toLowerCase() === lower);
+  return matched ?? raw;
 }
 
 function isElectronPluginAvailable(): boolean {
@@ -73,16 +81,17 @@ export function useElectronAvatarPlugin(clipNames: string[], expressions: string
 
     let disposed = false;
     const offEvent = window.avatarBridge.onPluginEvent((event) => {
+      const gesture = resolveGestureName(event.action, clipNames);
       const msg: RenderMessage = {
         type: 'render',
         session_id: BRIDGE_SESSION_ID,
-        state: deriveWireState(event.action, event.text),
+        state: deriveWireState(gesture, event.text),
         emotion: normalizeEmotion(event.emotion),
         intensity:
           typeof event.intensity === 'number' && Number.isFinite(event.intensity)
             ? Math.max(0, Math.min(1, event.intensity))
             : 0.8,
-        gesture: event.action,
+        gesture,
         text: event.text,
       };
       applyMessage(msg);
@@ -108,7 +117,7 @@ export function useElectronAvatarPlugin(clipNames: string[], expressions: string
       offEvent?.();
       offStatus?.();
     };
-  }, [enabled, applyMessage]);
+  }, [enabled, applyMessage, clipNames]);
 
   useEffect(() => {
     if (!enabled || !window.avatarBridge) return;

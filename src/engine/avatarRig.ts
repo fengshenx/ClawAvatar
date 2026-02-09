@@ -18,7 +18,19 @@ const EMOTION_TO_PRESET: Record<string, string> = {
   relaxed: 'relaxed',
 };
 
-const ALL_EMOTIONS = Object.values(EMOTION_TO_PRESET);
+const CLEARABLE_EMOTIONS = [
+  'neutral',
+  'happy',
+  'sad',
+  'angry',
+  'surprised',
+  'relaxed',
+  'sorry',
+  'confused',
+  'unknown',
+];
+
+const LAST_EMOTION_BY_MANAGER = new WeakMap<object, string>();
 
 /**
  * 应用表情（BlendShape），若有则用，若无则跳过
@@ -28,13 +40,25 @@ export function applyEmotion(vrm: VRM, emotion: string, intensity: number): void
   const expressionManager = vrm.expressionManager;
   if (!expressionManager) return;
 
-  const presetName = EMOTION_TO_PRESET[emotion] ?? emotion;
+  const requested = EMOTION_TO_PRESET[emotion] ?? emotion;
+  const presetName = expressionManager.getExpression(requested)
+    ? requested
+    : expressionManager.getExpression('neutral')
+      ? 'neutral'
+      : requested;
   const clampedIntensity = Math.max(0, Math.min(1, intensity));
 
-  ALL_EMOTIONS.forEach((name) => {
-    if (name && expressionManager.getExpression(name)) {
-      expressionManager.setValue(name, name === presetName ? clampedIntensity : 0);
-    }
+  // 强制重置所有表情后再设置新表情（确保每次都是干净状态）
+  LAST_EMOTION_BY_MANAGER.set(expressionManager, presetName);
+
+  const clearCandidates = new Set([
+    ...CLEARABLE_EMOTIONS,
+    ...Object.keys(expressionManager.expressionMap ?? {}),
+    presetName,
+  ]);
+  clearCandidates.forEach((name) => {
+    if (!name || !expressionManager.getExpression(name)) return;
+    expressionManager.setValue(name, name === presetName ? clampedIntensity : 0);
   });
 }
 

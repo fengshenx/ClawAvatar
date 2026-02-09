@@ -10,7 +10,7 @@ import { AvatarPluginClient } from './avatarPlugin.mjs';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const isMac = process.platform === 'darwin';
 const isDev = process.env.ELECTRON_DEV === '1' || process.argv.includes('--dev');
-const shouldOpenDevTools = process.env.ELECTRON_OPEN_DEVTOOLS === '1';
+const shouldOpenDevTools = process.env.ELECTRON_OPEN_DEVTOOLS === '1' || process.env.ELECTRON_DEV === '1';
 
 const WIN_WIDTH = 320;
 const WIN_HEIGHT = 420;

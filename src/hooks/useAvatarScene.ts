@@ -58,10 +58,14 @@ export function useAvatarScene(options: UseAvatarSceneOptions) {
   const playClipRef = useRef<((name: string) => void) | null>(null);
   const clipNamesRef = useRef<string[]>([]);
   const actionsRef = useRef<THREE.AnimationAction[]>([]);
+  const sanitizedActionCacheRef = useRef(new Map<THREE.AnimationAction, THREE.AnimationAction>());
   const activeClipIndexRef = useRef<number | null>(null);
   const loadSessionRef = useRef(0);
   const animParamsRef = useRef<AnimationParams>(stateToAnimationParams('idle', 0.8, 'neutral'));
   const lastGestureSeqRef = useRef(0);
+  // 记录上次的状态，用于检测变化时输出日志
+  const lastActionNameRef = useRef<string | null>(null);
+  const lastEmotionRef = useRef<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [clipNames, setClipNames] = useState<string[]>([]);
@@ -79,6 +83,63 @@ export function useAvatarScene(options: UseAvatarSceneOptions) {
     action.time = frame / fps;
     action.play();
     activeClipIndexRef.current = 0;
+  }
+
+  function isFaceTrackName(name: string): boolean {
+    const lower = name.toLowerCase();
+    return (
+      lower.includes('morphtargetinfluences') ||
+      lower.includes('expression') ||
+      lower.includes('blendshape') ||
+      lower.includes('presetexpressionmap') ||
+      lower.includes('customexpressionmap') ||
+      lower.includes('lookat') ||
+      lower.includes('blink') ||
+      lower.includes('aa') ||
+      lower.includes('ih') ||
+      lower.includes('ou') ||
+      lower.includes('ee') ||
+      lower.includes('oh')
+    );
+  }
+
+  function debugClipTracks(clip: THREE.AnimationClip, tag: string) {
+    const all = clip.tracks.map((track) => track.name);
+    const face = all.filter((name) => isFaceTrackName(name));
+    const body = all.filter((name) => !isFaceTrackName(name));
+    console.log(`[${tag}] clip="${clip.name}" trackCount=${all.length}`);
+    console.log(`[${tag}] faceTracks(${face.length}):`, face);
+    console.log(`[${tag}] bodyTracks(${body.length}):`, body);
+  }
+
+  function toPlayableAction(action: THREE.AnimationAction): THREE.AnimationAction {
+    const mixer = mixerRef.current;
+    if (!mixer) return action;
+    const cached = sanitizedActionCacheRef.current.get(action);
+    if (cached) return cached;
+
+    const clip = action.getClip();
+    const filteredTracks = clip.tracks.filter((track) => !isFaceTrackName(track.name));
+    if (filteredTracks.length === clip.tracks.length) {
+      sanitizedActionCacheRef.current.set(action, action);
+      return action;
+    }
+
+    const safeClip = new THREE.AnimationClip(
+      `${clip.name}__bodyOnly`,
+      clip.duration,
+      filteredTracks.map((track) => track.clone()),
+    );
+    const safeAction = mixer.clipAction(safeClip);
+    sanitizedActionCacheRef.current.set(action, safeAction);
+    return safeAction;
+  }
+
+  function stopAllActions(actions: THREE.AnimationAction[]) {
+    actions.forEach((a) => a.stop());
+    for (const action of sanitizedActionCacheRef.current.values()) {
+      action.stop();
+    }
   }
 
   useEffect(() => {
@@ -117,8 +178,9 @@ export function useAvatarScene(options: UseAvatarSceneOptions) {
               activeClipIndexRef.current = null;
               return;
             }
-            actionsRef.current.forEach((a) => a.stop());
-            const action = actionsRef.current[index];
+            stopAllActions(actionsRef.current);
+            const sourceAction = actionsRef.current[index];
+            const action = sourceAction ? toPlayableAction(sourceAction) : null;
             console.log('[playClip] Action found:', !!action);
             if (!action) return;
             const clip = action.getClip();
@@ -127,6 +189,7 @@ export function useAvatarScene(options: UseAvatarSceneOptions) {
               duration: clip.duration,
               tracks: clip.tracks.length,
             });
+            debugClipTracks(clip, 'playClip');
             action.reset();
             action.enabled = true;
             action.setEffectiveWeight(1);
@@ -232,8 +295,9 @@ export function useAvatarScene(options: UseAvatarSceneOptions) {
             activeClipIndexRef.current = null;
             return;
           }
-          actions.forEach((a) => a.stop());
-          const action = actions[index];
+          stopAllActions(actions);
+          const sourceAction = actions[index];
+          const action = sourceAction ? toPlayableAction(sourceAction) : null;
           console.log('[playClip VRMA] Action found:', !!action);
           if (!action) return;
           const clip = action.getClip();
@@ -242,6 +306,7 @@ export function useAvatarScene(options: UseAvatarSceneOptions) {
             duration: clip.duration,
             tracks: clip.tracks.length,
           });
+          debugClipTracks(clip, 'playClip VRMA');
           action.reset();
           action.enabled = true;
           action.setEffectiveWeight(1);
@@ -264,8 +329,9 @@ export function useAvatarScene(options: UseAvatarSceneOptions) {
             activeClipIndexRef.current = null;
             return;
           }
-          newActions.forEach((a) => a.stop());
-          const action = newActions[index];
+          stopAllActions(newActions);
+          const sourceAction = newActions[index];
+          const action = sourceAction ? toPlayableAction(sourceAction) : null;
           console.log('[playClip newMixer] Action found:', !!action);
           if (!action) return;
           const clip = action.getClip();
@@ -274,6 +340,7 @@ export function useAvatarScene(options: UseAvatarSceneOptions) {
             duration: clip.duration,
             tracks: clip.tracks.length,
           });
+          debugClipTracks(clip, 'playClip newMixer');
           action.reset();
           action.enabled = true;
           action.setEffectiveWeight(1);
@@ -302,6 +369,7 @@ export function useAvatarScene(options: UseAvatarSceneOptions) {
       playClipRef.current = null;
       clipNamesRef.current = [];
       actionsRef.current = [];
+      sanitizedActionCacheRef.current = new Map();
       activeClipIndexRef.current = null;
       lastGestureSeqRef.current = 0;
     };
@@ -332,9 +400,6 @@ export function useAvatarScene(options: UseAvatarSceneOptions) {
       if (mixer) {
         mixer.update(dt);
       }
-      if (vrm.update) {
-        vrm.update(dt);
-      }
 
       const current = useAppStore.getState().current;
       if (
@@ -343,7 +408,16 @@ export function useAvatarScene(options: UseAvatarSceneOptions) {
         playClipRef.current
       ) {
         lastGestureSeqRef.current = current.gestureSeq;
+        const prevAction = lastActionNameRef.current;
         playClipRef.current(current.gesture);
+        lastActionNameRef.current = current.gesture;
+        console.log(`[Avatar] 动作改变: ${prevAction ?? 'none'} -> ${current.gesture}`);
+      }
+
+      // 检测表情变化并输出日志
+      if (current.emotion !== lastEmotionRef.current) {
+        console.log(`[Avatar] 表情改变: ${lastEmotionRef.current ?? 'none'} -> ${current.emotion}`);
+        lastEmotionRef.current = current.emotion;
       }
 
       if (!isClipPlaying) {
@@ -362,13 +436,22 @@ export function useAvatarScene(options: UseAvatarSceneOptions) {
         updateControls(ctx, dt);
         const lookAtTarget = ctx.camera.position.clone();
         applyAnimationParams(vrm, params, time, lookAtTarget);
-        applyHeadBoneMotion(vrm, params, time);
       } else {
         // 播放 clip 时仍保持眼神朝向相机，避免视线停在过期目标或被异常轨道锁住
         applyLookAt(vrm, ctx.camera.position.clone());
         const params = stateToAnimationParams(current.state, current.intensity, current.emotion);
         applyAnimationParams(vrm, params, time, ctx.camera.position.clone());
         updateControls(ctx, dt);
+      }
+
+      // Ensure expression values written this frame are applied immediately.
+      if (vrm.update) {
+        vrm.update(dt);
+      }
+
+      if (!isClipPlaying) {
+        const params = stateToAnimationParams(current.state, current.intensity, current.emotion);
+        applyHeadBoneMotion(vrm, params, time);
       }
 
       renderFrame(ctx);
