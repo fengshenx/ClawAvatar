@@ -103,15 +103,6 @@ export function useAvatarScene(options: UseAvatarSceneOptions) {
     );
   }
 
-  function debugClipTracks(clip: THREE.AnimationClip, tag: string) {
-    const all = clip.tracks.map((track) => track.name);
-    const face = all.filter((name) => isFaceTrackName(name));
-    const body = all.filter((name) => !isFaceTrackName(name));
-    console.log(`[${tag}] clip="${clip.name}" trackCount=${all.length}`);
-    console.log(`[${tag}] faceTracks(${face.length}):`, face);
-    console.log(`[${tag}] bodyTracks(${body.length}):`, body);
-  }
-
   function toPlayableAction(action: THREE.AnimationAction): THREE.AnimationAction {
     const mixer = mixerRef.current;
     if (!mixer) return action;
@@ -169,27 +160,15 @@ export function useAvatarScene(options: UseAvatarSceneOptions) {
         if (result) {
           mixerRef.current = result.mixer;
           playClipRef.current = (name: string) => {
-            console.log('[playClip] Called with name:', name);
-            console.log('[playClip] Available clipNames:', clipNamesRef.current);
             const index = clipNamesRef.current.indexOf(name);
-            console.log('[playClip] Found index:', index);
             if (index < 0) {
-              console.log('[playClip] Clip not found!');
               activeClipIndexRef.current = null;
               return;
             }
             stopAllActions(actionsRef.current);
             const sourceAction = actionsRef.current[index];
             const action = sourceAction ? toPlayableAction(sourceAction) : null;
-            console.log('[playClip] Action found:', !!action);
             if (!action) return;
-            const clip = action.getClip();
-            console.log('[playClip] Clip info:', {
-              name: clip.name,
-              duration: clip.duration,
-              tracks: clip.tracks.length,
-            });
-            debugClipTracks(clip, 'playClip');
             action.reset();
             action.enabled = true;
             action.setEffectiveWeight(1);
@@ -227,17 +206,13 @@ export function useAvatarScene(options: UseAvatarSceneOptions) {
       type Manifest = { animations?: { name: string; url: string }[] };
       let list: { name: string; url: string }[] = [];
       try {
-        console.log('[VRMA] Fetching manifest...');
         const res = await fetch('/animations/manifest.json');
         if (disposed || loadSessionRef.current !== sessionId) return;
-        console.log('[VRMA] Manifest fetch status:', res.status);
         if (res.ok) {
           const data = (await res.json()) as Manifest;
           list = data.animations ?? [];
-          console.log('[VRMA] Manifest animations count:', list.length);
         }
-      } catch (e) {
-        console.error('[VRMA] Failed to fetch manifest:', e);
+      } catch {
         list = [];
       }
       if (list.length === 0) return;
@@ -246,11 +221,9 @@ export function useAvatarScene(options: UseAvatarSceneOptions) {
       for (const item of list) {
         if (disposed || loadSessionRef.current !== sessionId) return;
         try {
-          console.log('[VRMA] Loading:', item.url);
           const gltf = await loadVrma(item.url);
           if (disposed || loadSessionRef.current !== sessionId) return;
           const anims = gltf.userData?.vrmAnimations;
-          console.log('[VRMA] Loaded, animations found:', Array.isArray(anims) ? anims.length : 0);
           if (Array.isArray(anims) && anims.length > 0) {
             anims.forEach((vrmAnimation, i) => {
               const name =
@@ -258,21 +231,18 @@ export function useAvatarScene(options: UseAvatarSceneOptions) {
               vrmaEntries.push({ name, vrmAnimation });
             });
           }
-        } catch (e) {
-          console.error('[VRMA] Failed to load:', item.url, e);
+        } catch {
+          // ignore
         }
       }
       if (vrmaEntries.length === 0) {
-        console.log('[VRMA] No VRMA entries loaded');
         return;
       }
-      console.log('[VRMA] Loaded entries:', vrmaEntries.length, vrmaEntries.map((e) => e.name));
 
       const mixer = mixerRef.current;
       const names = clipNamesRef.current;
       const actions = actionsRef.current;
 
-      console.log('[VRMA] mixerRef.current exists:', !!mixer);
       if (mixer) {
         const existing = new Set(names);
         const uniqueEntries = vrmaEntries.filter((entry) => {
@@ -281,32 +251,19 @@ export function useAvatarScene(options: UseAvatarSceneOptions) {
           return true;
         });
         if (uniqueEntries.length === 0) {
-          console.log('[VRMA] All entries already added, skip');
           return;
         }
         addVrmaClipsToMixer(vrm, mixer, names, actions, uniqueEntries);
         playClipRef.current = (name: string) => {
-          console.log('[playClip VRMA] Called with name:', name);
-          console.log('[playClip VRMA] Available clipNames:', names);
           const index = names.indexOf(name);
-          console.log('[playClip VRMA] Found index:', index);
           if (index < 0) {
-            console.log('[playClip VRMA] Clip not found!');
             activeClipIndexRef.current = null;
             return;
           }
           stopAllActions(actions);
           const sourceAction = actions[index];
           const action = sourceAction ? toPlayableAction(sourceAction) : null;
-          console.log('[playClip VRMA] Action found:', !!action);
           if (!action) return;
-          const clip = action.getClip();
-          console.log('[playClip VRMA] Clip info:', {
-            name: clip.name,
-            duration: clip.duration,
-            tracks: clip.tracks.length,
-          });
-          debugClipTracks(clip, 'playClip VRMA');
           action.reset();
           action.enabled = true;
           action.setEffectiveWeight(1);
@@ -320,27 +277,15 @@ export function useAvatarScene(options: UseAvatarSceneOptions) {
         const newActions: THREE.AnimationAction[] = [];
         addVrmaClipsToMixer(vrm, newMixer, newNames, newActions, vrmaEntries);
         const playClip = (name: string) => {
-          console.log('[playClip newMixer] Called with name:', name);
-          console.log('[playClip newMixer] Available clipNames:', newNames);
           const index = newNames.indexOf(name);
-          console.log('[playClip newMixer] Found index:', index);
           if (index < 0) {
-            console.log('[playClip newMixer] Clip not found!');
             activeClipIndexRef.current = null;
             return;
           }
           stopAllActions(newActions);
           const sourceAction = newActions[index];
           const action = sourceAction ? toPlayableAction(sourceAction) : null;
-          console.log('[playClip newMixer] Action found:', !!action);
           if (!action) return;
-          const clip = action.getClip();
-          console.log('[playClip newMixer] Clip info:', {
-            name: clip.name,
-            duration: clip.duration,
-            tracks: clip.tracks.length,
-          });
-          debugClipTracks(clip, 'playClip newMixer');
           action.reset();
           action.enabled = true;
           action.setEffectiveWeight(1);
@@ -411,13 +356,6 @@ export function useAvatarScene(options: UseAvatarSceneOptions) {
         const prevAction = lastActionNameRef.current;
         playClipRef.current(current.gesture);
         lastActionNameRef.current = current.gesture;
-        console.log(`[Avatar] 动作改变: ${prevAction ?? 'none'} -> ${current.gesture}`);
-      }
-
-      // 检测表情变化并输出日志
-      if (current.emotion !== lastEmotionRef.current) {
-        console.log(`[Avatar] 表情改变: ${lastEmotionRef.current ?? 'none'} -> ${current.emotion}`);
-        lastEmotionRef.current = current.emotion;
       }
 
       if (!isClipPlaying) {
@@ -468,9 +406,6 @@ export function useAvatarScene(options: UseAvatarSceneOptions) {
   }, [width, height]);
 
   const onPlayClip = (name: string) => {
-    console.log('[ClipButtons] onPlayClip called:', name);
-    console.log('[ClipButtons] playClipRef.current exists:', !!playClipRef.current);
-    console.log('[ClipButtons] current clipNames:', clipNamesRef.current);
     playClipRef.current?.(name);
   };
 

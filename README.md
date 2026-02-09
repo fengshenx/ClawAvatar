@@ -57,6 +57,88 @@ npm run dev:all
 
 Adapter 会按顺序向前端推送：**typing** → **thinking** → **speaking** → **idle**，循环。Avatar 状态会随之平滑切换。未启动 Adapter 时，前端会显示未连接，仍可使用下方按钮本地模拟协议。
 
+## V3：OpenClaw Avatar 插件（LLM 自主触发）
+
+本项目可对接 OpenClaw `avatar` 插件。接入后，Agent 能通过工具 `avatar_express` 自主触发表情/动作；Electron 前端通过 `avatar.hello/pull` 拉取事件并渲染。
+
+### 1. 启用插件并启动 Gateway（推荐 dev）
+
+在 OpenClaw 仓库根目录执行：
+
+```bash
+pnpm install
+pnpm openclaw --dev plugins enable avatar
+pnpm gateway:dev
+```
+
+注意：`gateway:dev` 使用 `~/.openclaw-dev/openclaw.json`。请确保你在 `--dev` profile 下启用了 `avatar`。
+
+### 2. Electron 环境变量（首次引导）
+
+建议在 Electron 主进程环境中设置：
+
+```bash
+AVATAR_GATEWAY_WS_URL=ws://127.0.0.1:18789
+AVATAR_TOKEN=<dev gateway token>
+AVATAR_SESSION_KEY=agent:dev:main
+```
+
+获取 dev token：
+
+```bash
+pnpm -s openclaw --dev config get gateway.auth.token | tail -n 1
+```
+
+### 3. 验证握手是否成功
+
+点击桌面端「连接」后，在 OpenClaw 仓库执行：
+
+```bash
+pnpm openclaw --dev gateway call avatar.status --params '{"sessionKey":"agent:dev:main"}' --json
+```
+
+出现 `connected: true` 即表示 `avatar.hello` 成功。
+
+### 4. 手动触发一次动作（联调命令）
+
+```bash
+TOKEN="$(pnpm -s openclaw --dev config get gateway.auth.token | tail -n 1 | tr -d '\"')"
+
+curl -sS http://127.0.0.1:18789/tools/invoke \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tool": "avatar_express",
+    "sessionKey": "agent:dev:main",
+    "args": {
+      "sessionKey": "agent:dev:main",
+      "emotion": "happy",
+      "action": "greeting",
+      "intensity": 0.9,
+      "durationMs": 1200,
+      "text": "字幕测试"
+    }
+  }' | jq
+```
+
+返回 `accepted: true` 表示链路已打通。
+
+### 5. Telegram 中让模型自主触发
+
+要让 LLM 在 Telegram 会话中自动调用 `avatar_express`，需要满足：
+
+1. Avatar 前端已握手（`avatar.status.connected=true`）。
+2. 工具策略允许 `avatar_express`（若启用 allowlist，需要显式放行）。
+3. 当前会话注入了 Avatar 能力上下文（插件会在 `before_agent_start` 注入）。
+
+当前插件支持运行时回退：如果 Telegram 会话没有单独握手，会回退到已连接的 Avatar 会话（通常是 `main`）。
+
+### 6. 当前行为说明
+
+- `text` 仅用于字幕展示，不参与状态机。
+- `action` 触发动作 clip。
+- `emotion` 触发表情切换。
+
 ## 如何用按钮模拟协议事件
 
 - **设为 Idle**：发送 `agent_state`，`state=idle`，进入呼吸 + 眨眼。
