@@ -310,8 +310,6 @@ function broadcastAvatarEvent(event) {
 ipcMain.handle('electron:getPlatform', () => process.platform);
 ipcMain.handle('electron:readClipboardText', () => clipboard.readText());
 
-/** V4：渲染进程获取鉴权 token（从环境变量读取，由 Adapter/Gateway 校验） */
-ipcMain.handle('avatar:getToken', () => process.env.AVATAR_TOKEN ?? null);
 ipcMain.handle('avatar:pluginStatus', () => avatarPluginClient?.getStatus() ?? null);
 ipcMain.handle('avatar:pluginCapabilities', () => avatarPluginClient?.getCapabilities() ?? null);
 ipcMain.handle('avatar:pluginSetCapabilities', async (_, capabilities) => {
@@ -319,13 +317,13 @@ ipcMain.handle('avatar:pluginSetCapabilities', async (_, capabilities) => {
   await avatarPluginClient.setCapabilities(capabilities);
   return avatarPluginClient.getStatus();
 });
+ipcMain.handle('avatar:pluginSetGatewayUrl', (_, gatewayUrl) => {
+  if (!avatarPluginClient) return null;
+  return avatarPluginClient.setGatewayUrl(gatewayUrl);
+});
 ipcMain.handle('avatar:pluginConnect', async () => {
   if (!avatarPluginClient) return null;
   return avatarPluginClient.connect();
-});
-ipcMain.handle('avatar:pluginPair', async (_, bootstrapToken) => {
-  if (!avatarPluginClient) return null;
-  return avatarPluginClient.pair(bootstrapToken);
 });
 ipcMain.handle('avatar:pluginDisconnect', async () => {
   if (!avatarPluginClient) return null;

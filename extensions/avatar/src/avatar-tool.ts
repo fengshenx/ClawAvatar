@@ -1,20 +1,20 @@
-import { Type } from "@sinclair/typebox";
 import type { OpenClawPluginToolContext, RuntimeLogger } from "openclaw/plugin-sdk";
 import { AvatarState } from "./avatar-state.js";
 
-export const AvatarExpressToolSchema = Type.Object(
-  {
-    sessionKey: Type.Optional(Type.String({ description: "Override target session key." })),
-    emotion: Type.Optional(Type.String({ description: "Target emotion label." })),
-    action: Type.Optional(Type.String({ description: "Target action label." })),
-    intensity: Type.Optional(Type.Number({ minimum: 0, maximum: 1 })),
-    gesture: Type.Optional(Type.String({ description: "Optional gesture hint." })),
-    durationMs: Type.Optional(Type.Integer({ minimum: 200, maximum: 5000 })),
-    text: Type.Optional(Type.String({ description: "Optional text shown on avatar side." })),
-    runId: Type.Optional(Type.String({ description: "Optional run correlation id." })),
+export const AvatarExpressToolSchema = {
+  type: "object",
+  properties: {
+    sessionKey: { type: "string", description: "Override target session key." },
+    emotion: { type: "string", description: "Target emotion label." },
+    action: { type: "string", description: "Target action label." },
+    intensity: { type: "number", minimum: 0, maximum: 1 },
+    gesture: { type: "string", description: "Optional gesture hint." },
+    durationMs: { type: "integer", minimum: 200, maximum: 5000 },
+    text: { type: "string", description: "Optional text shown on avatar side." },
+    runId: { type: "string", description: "Optional run correlation id." },
   },
-  { additionalProperties: false },
-);
+  additionalProperties: false,
+} as const;
 
 function asObject(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) {

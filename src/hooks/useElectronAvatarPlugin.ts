@@ -67,7 +67,7 @@ function isElectronPluginAvailable(): boolean {
   return typeof window !== 'undefined' && Boolean(window.avatarBridge?.connectPlugin);
 }
 
-export function useElectronAvatarPlugin(clipNames: string[], expressions: string[]) {
+export function useElectronAvatarPlugin(clipNames: string[], expressions: string[], wsUrl?: string) {
   const applyMessage = useAppStore((s) => s.applyMessage);
   const [status, setStatus] = useState<PluginStatus>(DEFAULT_STATUS);
   const [busy, setBusy] = useState(false);
@@ -76,6 +76,9 @@ export function useElectronAvatarPlugin(clipNames: string[], expressions: string
 
   useEffect(() => {
     if (!enabled || !window.avatarBridge) return;
+    if (wsUrl?.trim()) {
+      window.avatarBridge.setPluginGatewayUrl(wsUrl).catch(() => undefined);
+    }
 
     let disposed = false;
     const offEvent = window.avatarBridge.onPluginEvent((event) => {
@@ -115,7 +118,7 @@ export function useElectronAvatarPlugin(clipNames: string[], expressions: string
       offEvent?.();
       offStatus?.();
     };
-  }, [enabled, applyMessage, clipNames]);
+  }, [enabled, applyMessage, clipNames, wsUrl]);
 
   useEffect(() => {
     if (!enabled || !window.avatarBridge) return;

@@ -19,15 +19,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
   moveWindow: (dx, dy) => ipcRenderer.send('electron:moveWindow', dx, dy),
 });
 
-/** V4：OpenClaw Channel 鉴权 token（主进程从 AVATAR_TOKEN 环境变量读取） */
+/** Avatar 插件桥接 API */
 contextBridge.exposeInMainWorld('avatarBridge', {
-  getAvatarToken: () => ipcRenderer.invoke('avatar:getToken'),
   getPluginStatus: () => ipcRenderer.invoke('avatar:pluginStatus'),
   getPluginCapabilities: () => ipcRenderer.invoke('avatar:pluginCapabilities'),
   setPluginCapabilities: (capabilities) =>
     ipcRenderer.invoke('avatar:pluginSetCapabilities', capabilities),
+  setPluginGatewayUrl: (gatewayUrl) => ipcRenderer.invoke('avatar:pluginSetGatewayUrl', gatewayUrl),
   connectPlugin: () => ipcRenderer.invoke('avatar:pluginConnect'),
-  pairPlugin: (bootstrapToken) => ipcRenderer.invoke('avatar:pluginPair', bootstrapToken),
   disconnectPlugin: () => ipcRenderer.invoke('avatar:pluginDisconnect'),
   clearPluginPairing: () => ipcRenderer.invoke('avatar:pluginClearPairing'),
   onPluginEvent: (handler) => {

@@ -5,7 +5,7 @@ ClawAvatar 是 OpenClaw 的 Avatar 前端（Electron + Web 渲染层）。
 当前主路径是：
 
 - OpenClaw Gateway + `avatar` 插件提供能力（`avatar.hello / avatar.pull / avatar.status / avatar.goodbye` + `avatar_express`）
-- ClawAvatar Electron 作为 Avatar 客户端，握手后拉取事件并渲染表情/动作
+- ClawAvatar Electron 作为 Avatar 客户端，通过本地 extension WS 握手后拉取事件并渲染表情/动作
 - LLM 在合适时机自主调用 `avatar_express`
 
 > 说明：README 以当前实际链路为准，旧的 Adapter 回放流程不再作为主开发路径。
@@ -13,7 +13,7 @@ ClawAvatar 是 OpenClaw 的 Avatar 前端（Electron + Web 渲染层）。
 ## 架构概览
 
 1. Electron 主进程：`electron/avatarPlugin.mjs`
-2. Gateway 握手：先 `connect`，再 `avatar.hello`
+2. 本地 WS 握手：连接 `ws://127.0.0.1:18802/extension` 后调用 `avatar.hello`
 3. 拉取事件：周期调用 `avatar.pull`
 4. 前端渲染：`src/hooks/useElectronAvatarPlugin.ts` -> `src/hooks/useAvatarScene.ts`
 
@@ -23,14 +23,39 @@ ClawAvatar 是 OpenClaw 的 Avatar 前端（Electron + Web 渲染层）。
 - OpenClaw 仓库可运行（建议同机本地开发）
 - 本项目有可用 VRM 模型：`public/models/avatar.glb`
 
-## 安装 Avatar 插件（本地目录，未发布 npm）
+## 正式环境安装
 
-将extensions/avatar放入OpenClaw根仓库。
-在 OpenClaw 仓库根目录执行：
+如果还没发布 npm，可用本地路径安装（正式 profile）：
+
+```bash
+openclaw plugins install /abs/path/to/extensions/avatar
+openclaw plugins enable avatar
+openclaw gateway restart
+```
+
+验证插件已加载：
+
+```bash
+openclaw plugins list --json | rg -n '"id": "avatar"|"status"|"gatewayMethods"'
+openclaw gateway call avatar.status --params '{"sessionKey":"main"}' --json
+```
+
+启动 ClawAvatar Electron（示例）：
+
+```bash
+export AVATAR_EXTENSION_WS_URL='ws://127.0.0.1:18802/extension'
+export AVATAR_SESSION_KEY='main'
+npm run dev:electron
+```
+
+## 开发环境安装（dev）
+
+将 `extensions/avatar` 放到 OpenClaw 仓库根目录后，在该仓库执行：
 
 ```bash
 openclaw --dev plugins install extensions/avatar
 openclaw --dev plugins enable avatar
+pnpm gateway:dev
 ```
 
 验证插件已加载：
@@ -39,38 +64,18 @@ openclaw --dev plugins enable avatar
 openclaw --dev plugins list --json | rg -n '"id": "avatar"|"status"|"gatewayMethods"'
 ```
 
-## 启动开发环境（推荐）
-
-### 1) 启动 OpenClaw Gateway（dev profile）
-
-在 OpenClaw 仓库根目录：
+启动 ClawAvatar Electron（示例）：
 
 ```bash
-pnpm gateway:dev
-```
-
-获取 dev token：
-
-```bash
-pnpm -s openclaw --dev config get gateway.auth.token | tail -n 1
-```
-
-### 2) 启动 ClawAvatar Electron
-
-在 `ClawAvatar` 目录：
-
-```bash
-npm install
-```
-
-设置环境变量后启动（示例）：
-
-```bash
-export AVATAR_GATEWAY_WS_URL='ws://127.0.0.1:18789'
-export AVATAR_TOKEN='<上一步 token>'
+export AVATAR_EXTENSION_WS_URL='ws://127.0.0.1:18802/extension'
 export AVATAR_SESSION_KEY='agent:dev:main'
 npm run dev:electron
 ```
+
+说明：
+
+- 默认地址已经是 `ws://127.0.0.1:18802/extension`，可不设置 `AVATAR_EXTENSION_WS_URL`
+- Avatar extension WS 不使用 token 校验，且仅允许本机 loopback 访问
 
 ## 连接与握手验证
 
@@ -127,41 +132,17 @@ curl -sS http://127.0.0.1:18789/tools/invoke \
 1. `unknown method: avatar.hello`
 
 - 连接到了未启用 avatar 插件的 profile（常见是 `--dev`/默认 profile 混用）
+- 或 extension 本地 WS 服务未启动（默认 `127.0.0.1:18802`）
 
-2. `unauthorized: token mismatch`
+2. `ECONNREFUSED 127.0.0.1:18802`
 
-- Electron 使用的 token 与当前 gateway profile 不一致
+- OpenClaw 未启动或 avatar 插件未启用
+- 端口被占用，且插件改用了其他 `wsPort`
 
-3. `handshake timeout`
-
-- 前端未正确发送第一帧 `connect`
-- 或存在重复连接实例，其中某条连接未发送 `connect`
-
-4. `origin not allowed`
-
-- WS 连接缺少/错误 `Origin`，需与 gateway host 对齐（例如 `http://127.0.0.1:18789`）
-
-5. `accepted=false, reason=avatar_unavailable`
+3. `accepted=false, reason=avatar_unavailable`
 
 - `avatar.hello` 未成功
 - 或 `sessionKey` 与当前运行会话不匹配
-
-## 生产环境安装（本地目录方式）
-
-如果还没发布 npm，生产也可以用本地路径安装：
-
-```bash
-openclaw plugins install /abs/path/to/extensions/avatar
-openclaw plugins enable avatar
-openclaw gateway restart
-```
-
-然后验证：
-
-```bash
-openclaw plugins list --json | rg -n '"id": "avatar"|"status"|"gatewayMethods"'
-openclaw gateway call avatar.status --params '{"sessionKey":"main"}' --json
-```
 
 ## 构建
 

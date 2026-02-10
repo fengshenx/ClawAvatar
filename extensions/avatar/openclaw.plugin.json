@@ -12,6 +12,11 @@
       "label": "Queue Limit",
       "help": "Max queued avatar events per session.",
       "advanced": true
+    },
+    "wsPort": {
+      "label": "Local WS Port",
+      "help": "Local extension websocket port (127.0.0.1 only).",
+      "advanced": true
     }
   },
   "configSchema": {
@@ -19,7 +24,8 @@
     "additionalProperties": false,
     "properties": {
       "enabled": { "type": "boolean" },
-      "queueLimit": { "type": "integer", "minimum": 16, "maximum": 2048 }
+      "queueLimit": { "type": "integer", "minimum": 16, "maximum": 2048 },
+      "wsPort": { "type": "integer", "minimum": 1, "maximum": 65535 }
     }
   }
 }

@@ -3,6 +3,8 @@
 interface ImportMetaEnv {
   readonly VITE_AVATAR_WS_URL?: string;
   readonly VITE_AVATAR_TOKEN?: string;
+  readonly VITE_AVATAR_EXTENSION_PORT?: string;
+  readonly VITE_AVATAR_EXTENSION_WS_PORT?: string;
 }
 
 interface ImportMeta {
@@ -28,7 +30,6 @@ interface ElectronAPI {
 
 /** Avatar Channel 鉴权等（V4：Electron 下由 preload 暴露） */
 interface AvatarBridge {
-  getAvatarToken: () => Promise<string | null>;
   getPluginStatus: () => Promise<{
     phase: 'idle' | 'pairing' | 'connecting' | 'connected' | 'error';
     paired: boolean;
@@ -56,8 +57,8 @@ interface AvatarBridge {
     viseme?: { supported?: boolean; mode?: string };
     fallback?: Record<string, string>;
   }) => Promise<unknown>;
+  setPluginGatewayUrl: (gatewayUrl: string) => Promise<unknown>;
   connectPlugin: () => Promise<unknown>;
-  pairPlugin: (bootstrapToken: string) => Promise<unknown>;
   disconnectPlugin: () => Promise<unknown>;
   clearPluginPairing: () => Promise<unknown>;
   onPluginEvent: (handler: (payload: {

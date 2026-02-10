@@ -3,8 +3,11 @@
   "version": "2026.2.6-3",
   "description": "OpenClaw avatar expression plugin",
   "type": "module",
-  "devDependencies": {
-    "openclaw": "workspace:*"
+  "dependencies": {
+    "ws": "^8.19.0"
+  },
+  "peerDependencies": {
+    "openclaw": "*"
   },
   "openclaw": {
     "extensions": [

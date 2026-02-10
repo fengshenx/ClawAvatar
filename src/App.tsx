@@ -24,7 +24,14 @@ function App() {
     height,
   });
   const [expressionNames, setExpressionNames] = useState<string[]>([]);
-  const plugin = useElectronAvatarPlugin(clipNames, expressionNames);
+  const port =
+    Number(
+      import.meta.env?.VITE_AVATAR_EXTENSION_PORT ??
+        import.meta.env?.VITE_AVATAR_EXTENSION_WS_PORT ??
+        18802,
+    ) || 18802;
+  const wsUrl = `ws://127.0.0.1:${port}/extension`;
+  const plugin = useElectronAvatarPlugin(clipNames, expressionNames, wsUrl);
 
   useEffect(() => {
     setExpressionNames(getAvailableExpressions());
