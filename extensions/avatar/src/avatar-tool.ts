@@ -67,8 +67,11 @@ export function createAvatarExpressTool(params: {
     name: "avatar_express",
     label: "Avatar Express",
     description:
-      "Express non-verbal cues on the connected avatar front-end. " +
-      "Use for emotion/action hints. If avatar is unavailable, this tool returns a safe no-op result.",
+      "Show how you're feeling through facial expressions and body language. " +
+      "Use this naturally when your emotional state matches what you're saying - " +
+      "like a warm smile when being friendly, a nod when agreeing, or a thoughtful look when considering something. " +
+      "The avatar will display the expression alongside your response. " +
+      "If the avatar isn't connected, this does nothing - just continue with your response.",
     parameters: AvatarExpressToolSchema,
     execute: async (toolCallId: string, rawParams: unknown) => {
       const payload = asObject(rawParams);

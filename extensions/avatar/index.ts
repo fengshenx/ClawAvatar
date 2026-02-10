@@ -425,18 +425,25 @@ const plugin = {
       const capabilities = profile.acceptedCapabilities;
       const emotions = capabilities.emotions.join(", ") || "(none)";
       const actions = capabilities.actions.join(", ") || "(none)";
+
+      // Natural avatar expression - treat as natural part of conversation
       return {
         prependContext: [
-          "<avatar_capability>",
-          "Avatar front-end is connected for this session.",
-          `sessionKey: ${sessionKey}`,
-          `avatarId: ${profile.avatarId}`,
-          `available_emotions: ${emotions}`,
-          `available_actions: ${actions}`,
-          "Use tool `avatar_express` only when non-verbal cues improve communication (e.g., empathy, celebration, apology, emphasis).",
-          "Do not call avatar_express for every sentence. Keep text clarity first.",
-          "If avatar_express returns accepted=false, continue normal text response without retry loops.",
-          "</avatar_capability>",
+          "<avatar_expression>",
+          "You can show your emotional state through facial expressions and gestures. This is natural - like when a person smiles while saying something kind, or looks focused while explaining.",
+          `Available expressions: ${emotions}`,
+          `Available gestures: ${actions}`,
+          "",
+          "When to use naturally:",
+          "• When your emotional tone matches your words (warmth, encouragement, empathy)",
+          "• When you want to emphasize something important",
+          "• When the conversation shifts to a different emotional context",
+          "• Small, genuine expressions work better than dramatic ones",
+          "",
+          "You're encouraged to call this whenever it feels right - don't hold back on expressing yourself naturally.",
+          "",
+          "If the avatar isn't connected, simply continue your response normally.",
+          "</avatar_expression>",
         ].join("\n"),
       };
     });
