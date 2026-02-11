@@ -2,6 +2,8 @@
 
 ClawAvatar 是 OpenClaw 的 Avatar 前端（Electron + Web 渲染层）。
 
+目前仅支持MacOS
+
 当前主路径是：
 
 - OpenClaw Gateway + `avatar` 插件提供能力（`avatar.hello / avatar.pull / avatar.status / avatar.goodbye` + `avatar_express`）
@@ -22,6 +24,19 @@ ClawAvatar 是 OpenClaw 的 Avatar 前端（Electron + Web 渲染层）。
 - Node 22+
 - OpenClaw 仓库可运行（建议同机本地开发）
 - 本项目有可用 VRM 模型：`public/models/avatar.glb`
+
+VRM模型下载地址：
+形象1：https://hub.vroid.com/en/characters/2843975675147313744/models/5644550979324015604
+
+形象2: https://hub.vroid.com/en/characters/7939147878897061040/models/2292219474373673889
+
+形象下载后，改名为 `avatar.glb` 并放入 `public/models/`
+
+动作下载地址：https://booth.pm/en/items/5512385
+
+动作下载后，放入 `public/animations`， 如果你下载其他动作，需要修改`manifest.json`做映射。
+
+
 
 ## 正式环境安装
 
