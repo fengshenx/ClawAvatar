@@ -3,6 +3,8 @@ import { CubismMoc } from './model/cubismmoc';
 import { CubismModelSettingJson } from './cubismmodelsettingjson';
 import { Live2DManager } from './Live2DManager';
 import { Live2DRenderer } from './Live2DRenderer';
+import { CubismPhysics } from './physics/cubismphysics';
+import { CubismPose } from './effect/cubismpose';
 
 export interface Live2DModelLoadOptions {
   /** Live2D 模型文件夹 URL（包含 model.json） */
@@ -24,6 +26,10 @@ export interface Live2DModelLoadResult {
   partNames: string[];
   /** 可用的表情名称列表 */
   expressionNames: string[];
+  /** 物理模拟（可选） */
+  physics: CubismPhysics | null;
+  /** 姿态切换（可选） */
+  pose: CubismPose | null;
 }
 
 /**
@@ -122,10 +128,36 @@ export class Live2DModelLoader {
       expressionNames.push(setting.getExpressionName(i));
     }
 
+    // 加载物理与姿态（对齐 Demo 加载链路）
+    let physics: CubismPhysics | null = null;
+    let pose: CubismPose | null = null;
+
+    const physicsFileName = setting.getPhysicsFileName();
+    if (physicsFileName) {
+      try {
+        const physicsBuffer = await fetchBinary(`${modelUrl}/${physicsFileName}`);
+        physics = CubismPhysics.create(physicsBuffer, physicsBuffer.byteLength);
+      } catch (error) {
+        console.warn('[Live2D] Failed to load physics:', error);
+      }
+    }
+
+    const poseFileName = setting.getPoseFileName();
+    if (poseFileName) {
+      try {
+        const poseBuffer = await fetchBinary(`${modelUrl}/${poseFileName}`);
+        pose = CubismPose.create(poseBuffer, poseBuffer.byteLength);
+      } catch (error) {
+        console.warn('[Live2D] Failed to load pose:', error);
+      }
+    }
+
     console.log('[Live2D] Model loaded successfully:', {
       parameterCount: paramCount,
       partCount: partCount,
       expressionCount: expressionNames.length,
+      hasPhysics: !!physics,
+      hasPose: !!pose,
     });
 
     return {
@@ -135,6 +167,8 @@ export class Live2DModelLoader {
       parameterNames,
       partNames,
       expressionNames,
+      physics,
+      pose,
     };
   }
 }
@@ -170,6 +204,14 @@ async function fetchModelSettingBuffer(
   }
 
   return null;
+}
+
+async function fetchBinary(url: string): Promise<ArrayBuffer> {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch: ${url}`);
+  }
+  return response.arrayBuffer();
 }
 
 /**

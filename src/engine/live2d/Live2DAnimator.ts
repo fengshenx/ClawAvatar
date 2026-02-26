@@ -3,6 +3,7 @@ import { CubismMotion } from './motion/cubismmotion';
 import { CubismMotionQueueManager } from './motion/cubismmotionqueuemanager';
 import { CubismModelSettingJson } from './cubismmodelsettingjson';
 import { csmVector } from './type/csmvector';
+import { CubismIdHandle } from './id/cubismid';
 
 export interface MotionEntry {
   name: string;
@@ -23,6 +24,10 @@ export class Live2DAnimator {
   private motionQueueManager: CubismMotionQueueManager;
   private isPlaying = false;
   private lastTime = 0;
+  private motionMeta: Map<string, { group: string; index: number }> = new Map();
+  private eyeBlinkIds: csmVector<CubismIdHandle> = new csmVector();
+  private lipSyncIds: csmVector<CubismIdHandle> = new csmVector();
+  private modelSetting: CubismModelSettingJson | null = null;
 
   constructor(model: CubismModel) {
     this.model = model;
@@ -43,8 +48,14 @@ export class Live2DAnimator {
         undefined,
         false
       );
-      // 该 SDK 版本中 effect ids 默认是 null，不初始化会在播放时触发空指针
-      motion.setEffectIds(new csmVector(), new csmVector());
+      const meta = this.motionMeta.get(name);
+      if (meta && this.modelSetting) {
+        const fadeIn = this.modelSetting.getMotionFadeInTimeValue(meta.group, meta.index);
+        if (fadeIn >= 0) motion.setFadeInTime(fadeIn);
+        const fadeOut = this.modelSetting.getMotionFadeOutTimeValue(meta.group, meta.index);
+        if (fadeOut >= 0) motion.setFadeOutTime(fadeOut);
+      }
+      motion.setEffectIds(this.eyeBlinkIds, this.lipSyncIds);
       this.clips.set(name, motion);
       console.log(`[Live2D] Motion loaded: ${name}`);
     } catch (error) {
@@ -73,6 +84,18 @@ export class Live2DAnimator {
 
       const modelJsonBuffer = modelSetting.buffer;
       const setting = new CubismModelSettingJson(modelJsonBuffer, modelJsonBuffer.byteLength);
+      this.modelSetting = setting;
+      this.eyeBlinkIds.clear();
+      this.lipSyncIds.clear();
+
+      for (let i = 0; i < setting.getEyeBlinkParameterCount(); i++) {
+        const id = setting.getEyeBlinkParameterId(i);
+        if (id) this.eyeBlinkIds.pushBack(id);
+      }
+      for (let i = 0; i < setting.getLipSyncParameterCount(); i++) {
+        const id = setting.getLipSyncParameterId(i);
+        if (id) this.lipSyncIds.pushBack(id);
+      }
 
       // 获取所有动作组
       const motions: { name: string; url: string }[] = [];
@@ -87,6 +110,7 @@ export class Live2DAnimator {
           const fullUrl = `${modelUrl}/${motionFileName}`;
           // 使用组名加索引作为动作名称
           const motionName = `${groupName}_${j}`;
+          this.motionMeta.set(motionName, { group: groupName, index: j });
           motions.push({ name: motionName, url: fullUrl });
         }
       }

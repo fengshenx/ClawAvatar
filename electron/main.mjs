@@ -14,7 +14,7 @@ const shouldOpenDevTools = process.env.ELECTRON_OPEN_DEVTOOLS === '1' || process
 const useTransparentWindow = process.env.ELECTRON_OPAQUE !== '1';
 
 const WIN_WIDTH = 320;
-const WIN_HEIGHT = 420;
+const WIN_HEIGHT = 720;
 const MARGIN = 20;
 const SNAP_THRESHOLD = 24; // 距离边缘多少 px 内触发吸附
 

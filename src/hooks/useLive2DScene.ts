@@ -11,6 +11,8 @@ import {
   CubismModel,
   Live2DRenderer,
 } from '@/engine';
+import { CubismPhysics } from '@/engine/live2d/physics/cubismphysics';
+import { CubismPose } from '@/engine/live2d/effect/cubismpose';
 import { useAppStore } from '@/app/state';
 import { isElectron } from '@/config';
 
@@ -30,6 +32,8 @@ export function useLive2DScene(options: UseLive2DSceneOptions) {
   const rendererRef = useRef<Live2DRenderer | null>(null);
   const animatorRef = useRef<Live2DAnimator | null>(null);
   const paramManagerRef = useRef<ParameterManager | null>(null);
+  const physicsRef = useRef<CubismPhysics | null>(null);
+  const poseRef = useRef<CubismPose | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -81,11 +85,13 @@ export function useLive2DScene(options: UseLive2DSceneOptions) {
     const resolvedUrl = resolveModelUrl(modelUrl);
     console.log('[Live2D] Loading model from:', resolvedUrl);
     Live2DModelLoader.load({ modelUrl: resolvedUrl, canvas })
-      .then(async ({ model, renderer }) => {
+      .then(async ({ model, renderer, physics, pose }) => {
         if (disposed) return;
 
         modelRef.current = model;
         rendererRef.current = renderer;
+        physicsRef.current = physics;
+        poseRef.current = pose;
         {
           const size = getCanvasSize();
           renderer.resize(size.width, size.height);
@@ -134,6 +140,8 @@ export function useLive2DScene(options: UseLive2DSceneOptions) {
           const renderer = rendererRef.current;
           const animator = animatorRef.current;
           const paramManager = paramManagerRef.current;
+          const physics = physicsRef.current;
+          const pose = poseRef.current;
 
           if (!model || !renderer || !animator || !paramManager) return;
 
@@ -175,6 +183,13 @@ export function useLive2DScene(options: UseLive2DSceneOptions) {
             paramManager.applyEmotion(current.emotion, current.intensity);
             paramManager.applyBreathing(performance.now() / 1000, 1);
             paramManager.applyBlinking(1);
+          }
+
+          if (physics) {
+            physics.evaluate(model, dt);
+          }
+          if (pose) {
+            pose.updateParameters(model, dt);
           }
 
           // 更新模型
@@ -249,6 +264,14 @@ export function useLive2DScene(options: UseLive2DSceneOptions) {
       rendererRef.current = null;
       animatorRef.current = null;
       paramManagerRef.current = null;
+      if (physicsRef.current) {
+        CubismPhysics.delete(physicsRef.current);
+        physicsRef.current = null;
+      }
+      if (poseRef.current) {
+        CubismPose.delete(poseRef.current);
+        poseRef.current = null;
+      }
     };
   }, [modelUrl, width, height]);
 

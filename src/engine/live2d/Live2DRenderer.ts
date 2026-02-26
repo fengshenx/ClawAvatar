@@ -1,6 +1,7 @@
 import { CubismModel } from './model/cubismmodel';
 import { CubismRenderer_WebGL } from './rendering/cubismrenderer_webgl';
 import { CubismModelMatrix } from './math/cubismmodelmatrix';
+import { CubismMatrix44 } from './math/cubismmatrix44';
 
 export interface Live2DRendererConfig {
   canvas: HTMLCanvasElement;
@@ -13,9 +14,7 @@ export interface Live2DRendererConfig {
  * 负责 Live2D 模型的渲染输出（WebGL 方式）
  */
 export class Live2DRenderer {
-  private static readonly MODEL_SCALE = 2;
-  private static readonly MODEL_OFFSET_X = 1.3;
-  private static readonly MODEL_OFFSET_Y = 1.3;
+  private static readonly MODEL_SCALE = 1;
   private canvas: HTMLCanvasElement;
   private width: number;
   private height: number;
@@ -174,21 +173,18 @@ export class Live2DRenderer {
   private updateMvpMatrix(): void {
     if (!this.renderer || this.modelCanvasWidth <= 0 || this.modelCanvasHeight <= 0) return;
 
-    const viewAspect = this.width / Math.max(this.height, 1);
-    const modelAspect = this.modelCanvasWidth / Math.max(this.modelCanvasHeight, 1);
+    const projection = new CubismMatrix44();
     const modelMatrix = new CubismModelMatrix(this.modelCanvasWidth, this.modelCanvasHeight);
-    const targetSpan = 2.0 * Live2DRenderer.MODEL_SCALE;
 
-    // contain：保证模型始终在窗口内（不跑到外面）
-    if (viewAspect > modelAspect) {
-      modelMatrix.setHeight(targetSpan);
+    // 对齐 Demo 的窗口适配逻辑，避免模型落在左下角
+    if (this.modelCanvasWidth > 1.0 && this.width < this.height) {
+      modelMatrix.setWidth(2.0 * Live2DRenderer.MODEL_SCALE);
+      projection.scale(1.0, this.width / Math.max(this.height, 1));
     } else {
-      modelMatrix.setWidth(targetSpan);
+      projection.scale(this.height / Math.max(this.width, 1), 1.0);
     }
-    modelMatrix.setCenterPosition(
-      Live2DRenderer.MODEL_OFFSET_X,
-      Live2DRenderer.MODEL_OFFSET_Y,
-    );
-    this.renderer.setMvpMatrix(modelMatrix);
+
+    projection.multiplyByMatrix(modelMatrix);
+    this.renderer.setMvpMatrix(projection);
   }
 }
