@@ -160,7 +160,11 @@ export class Live2DAnimator {
    */
   play(name: string): string | null {
     const motionName = this.resolveMotionName(name);
-    const motion = motionName ? this.clips.get(motionName) : undefined;
+    if (!motionName) {
+      console.warn(`[Live2D] Motion not found: ${name}`);
+      return null;
+    }
+    const motion = this.clips.get(motionName);
     if (!motion) {
       console.warn(`[Live2D] Motion not found: ${name}`);
       return null;
@@ -205,6 +209,44 @@ export class Live2DAnimator {
    */
   getLoadedMotionNames(): string[] {
     return Array.from(this.clips.keys());
+  }
+
+  /**
+   * 获取所有动作组名称
+   */
+  getMotionGroupNames(): string[] {
+    if (!this.modelSetting) return [];
+    const groupCount = this.modelSetting.getMotionGroupCount();
+    const groups: string[] = [];
+    for (let i = 0; i < groupCount; i++) {
+      const name = this.modelSetting!.getMotionGroupName(i);
+      if (name) groups.push(name);
+    }
+    return groups;
+  }
+
+  /**
+   * 随机播放指定动作组中的一个 motion
+   */
+  playRandomInGroup(groupName: string): string | null {
+    if (!this.modelSetting) {
+      console.warn(`[Live2D] No model setting loaded`);
+      return null;
+    }
+
+    const groupLower = groupName.toLowerCase();
+    const motionCount = this.modelSetting.getMotionCount(groupLower);
+
+    if (motionCount === 0) {
+      console.warn(`[Live2D] No motions found in group: ${groupName}`);
+      return null;
+    }
+
+    // 随机选择一个索引
+    const randomIndex = Math.floor(Math.random() * motionCount);
+    const motionName = `${groupLower}_${randomIndex}`;
+
+    return this.play(motionName);
   }
 
   private resolveMotionName(input: string): string | null {

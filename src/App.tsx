@@ -19,10 +19,11 @@ function useWindowSize() {
 
 function App() {
   const { width, height } = useWindowSize();
-  const { canvasRef, loading, error, motionNames } = useLive2DScene({
-    width,
-    height,
-  });
+  const { canvasRef, loading, error, motionNames, getMotionGroupNames, playRandomInGroup } =
+    useLive2DScene({
+      width,
+      height,
+    });
   const expressionNames = [
     'neutral',
     'happy',
@@ -38,7 +39,13 @@ function App() {
         18802,
     ) || 18802;
   const wsUrl = `ws://127.0.0.1:${port}/extension`;
-  const plugin = useElectronAvatarPlugin(motionNames, expressionNames, wsUrl);
+  const plugin = useElectronAvatarPlugin(
+    motionNames,
+    expressionNames,
+    wsUrl,
+    getMotionGroupNames,
+    playRandomInGroup,
+  );
 
   return (
     <div className="app">

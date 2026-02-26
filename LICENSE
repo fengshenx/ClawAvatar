@@ -19,3 +19,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+---
+
+Live2D Model Notice
+The Live2D model "Hiyori" included in this project is an official sample
+provided by Live2D Inc. It is included only for demonstration purposes.
+If you plan to use this project commercially, please replace the model with
+your own licensed Live2D model.

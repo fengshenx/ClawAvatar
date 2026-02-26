@@ -69,12 +69,14 @@ export class ParameterManager {
 
   /**
    * 应用表情参数
+   * 如果 emotion 不被支持，则应用 neutral 作为默认值
    */
-  applyEmotion(emotion: string, intensity: number): void {
-    const paramMap = ParameterManager.EMOTION_MAP[emotion];
-    if (!paramMap) {
-      return;
-    }
+  applyEmotion(emotion: string | undefined, intensity: number): void {
+    // 如果 emotion 不被支持，使用 neutral 作为默认值
+    const supportedEmotion =
+      emotion && ParameterManager.EMOTION_MAP[emotion] ? emotion : 'neutral';
+    const paramMap = ParameterManager.EMOTION_MAP[supportedEmotion];
+    if (!paramMap) return;
 
     for (const [paramName, value] of Object.entries(paramMap)) {
       this.setParameter(paramName, value * intensity);

@@ -290,11 +290,21 @@ export function useLive2DScene(options: UseLive2DSceneOptions) {
     animatorRef.current?.play(name);
   };
 
+  const getMotionGroupNames = () => {
+    return animatorRef.current?.getMotionGroupNames() || [];
+  };
+
+  const playRandomInGroup = (groupName: string) => {
+    return animatorRef.current?.playRandomInGroup(groupName) || null;
+  };
+
   return {
     canvasRef,
     loading,
     error,
     motionNames,
     playMotion,
+    getMotionGroupNames,
+    playRandomInGroup,
   };
 }

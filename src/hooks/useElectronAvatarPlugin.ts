@@ -54,13 +54,27 @@ function deriveWireState(): RenderMessage['state'] {
   return 'idle';
 }
 
-function resolveGestureName(action: string | undefined, clipNames: string[]): string | undefined {
+function resolveGestureName(
+  action: string | undefined,
+  clipNames: string[],
+  motionGroupNames: string[],
+): string | undefined {
   if (!action) return undefined;
   const raw = action.trim();
   if (!raw) return undefined;
   const normalized = normalizeActionToken(raw);
+
+  // 如果 action 是 emotion 名称或动作组名称，不作为 gesture 处理
+  const isEmotion = KNOWN_EMOTIONS.some((e) => normalizeActionToken(e) === normalized);
+  const isMotionGroup = motionGroupNames.some(
+    (g) => normalizeActionToken(g) === normalized,
+  );
+  if (isEmotion || isMotionGroup) {
+    return undefined;
+  }
+
   const matched = clipNames.find((name) => normalizeActionToken(name) === normalized);
-  return matched ?? raw;
+  return matched;
 }
 
 function normalizeActionToken(value: string): string {
@@ -75,7 +89,13 @@ function isElectronPluginAvailable(): boolean {
   return typeof window !== 'undefined' && Boolean(window.avatarBridge?.connectPlugin);
 }
 
-export function useElectronAvatarPlugin(clipNames: string[], expressions: string[], wsUrl?: string) {
+export function useElectronAvatarPlugin(
+  clipNames: string[],
+  expressions: string[],
+  wsUrl?: string,
+  getMotionGroupNames?: () => string[],
+  playRandomInGroup?: (groupName: string) => string | null,
+) {
   const applyMessage = useAppStore((s) => s.applyMessage);
   const [status, setStatus] = useState<PluginStatus>(DEFAULT_STATUS);
   const [busy, setBusy] = useState(false);
@@ -102,13 +122,40 @@ export function useElectronAvatarPlugin(clipNames: string[], expressions: string
         (typeof (event as { event?: { action?: unknown } }).event?.action === 'string'
           ? ((event as { event: { action: string } }).event.action)
           : undefined);
-      const gesture = resolveGestureName(rawAction, clipNames);
-      const normalizedEmotion = normalizeEmotion(event.emotion);
+
+      // 获取当前的动作组名称（每次事件触发时获取最新的）
+      const motionGroupNames = getMotionGroupNames?.() || [];
+
+      // 检查 action 或 emotion 是否是动作组名称
+      let gesture: string | undefined;
+      const normalizedAction = rawAction?.trim().toLowerCase();
+      const normalizedEmotionForGroup = event.emotion?.trim().toLowerCase();
+
+      // 优先检查 action 是否是动作组名称
+      let groupNameToPlay: string | undefined;
+      if (normalizedAction && motionGroupNames.map((n) => n.toLowerCase()).includes(normalizedAction)) {
+        groupNameToPlay = normalizedAction;
+      } else if (normalizedEmotionForGroup && motionGroupNames.map((n) => n.toLowerCase()).includes(normalizedEmotionForGroup)) {
+        // 其次检查 emotion 是否是动作组名称
+        groupNameToPlay = normalizedEmotionForGroup;
+      }
+
+      if (groupNameToPlay) {
+        // 是动作组名称，随机播放该组中的一个 motion
+        const played = playRandomInGroup?.(groupNameToPlay);
+        if (played) {
+          gesture = played;
+        }
+      } else {
+        gesture = resolveGestureName(rawAction, clipNames, motionGroupNames);
+      }
+
+      const normalizedEmotionResult = normalizeEmotion(event.emotion);
       const normalizedIntensity =
         typeof event.intensity === 'number' && Number.isFinite(event.intensity)
           ? Math.max(0, Math.min(1, event.intensity))
           : 0.8;
-      const signature = `${rawAction ?? ''}|${normalizedEmotion ?? ''}|${normalizedIntensity}|${event.text ?? ''}|${gesture ?? ''}`;
+      const signature = `${rawAction ?? ''}|${normalizedEmotionResult ?? ''}|${normalizedIntensity}|${event.text ?? ''}|${gesture ?? ''}`;
       if (lastLogSignatureRef.current !== signature) {
         lastLogSignatureRef.current = signature;
         console.log('[AvatarPlugin] Incoming sync event', {
@@ -117,7 +164,7 @@ export function useElectronAvatarPlugin(clipNames: string[], expressions: string
           intensity: event.intensity,
           text: event.text,
           mappedGesture: gesture,
-          mappedEmotion: normalizedEmotion,
+          mappedEmotion: normalizedEmotionResult,
           mappedIntensity: normalizedIntensity,
         });
       }
@@ -125,7 +172,7 @@ export function useElectronAvatarPlugin(clipNames: string[], expressions: string
         type: 'render',
         session_id: BRIDGE_SESSION_ID,
         state: deriveWireState(),
-        emotion: normalizedEmotion,
+        emotion: normalizedEmotionResult,
         intensity: normalizedIntensity,
         gesture,
         text: event.text,
@@ -157,12 +204,13 @@ export function useElectronAvatarPlugin(clipNames: string[], expressions: string
 
   useEffect(() => {
     if (!enabled || !window.avatarBridge) return;
-    const actions = clipNames.filter((name) => Boolean(name?.trim()));
+    const motionGroupNames = getMotionGroupNames?.() || [];
+    const actions = [...clipNames, ...motionGroupNames].filter((name) => Boolean(name?.trim()));
     const emotions = expressions.filter((name) => Boolean(name?.trim()));
     window.avatarBridge
       .setPluginCapabilities({ actions, emotions })
       .catch(() => undefined);
-  }, [enabled, clipNames, expressions]);
+  }, [enabled, clipNames, expressions, getMotionGroupNames]);
 
   const connect = useCallback(async () => {
     if (!window.avatarBridge) return;
