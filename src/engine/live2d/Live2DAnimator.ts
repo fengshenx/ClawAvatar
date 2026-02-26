@@ -24,7 +24,7 @@ export class Live2DAnimator {
   private motionQueueManager: CubismMotionQueueManager;
   private isPlaying = false;
   private lastTime = 0;
-  private motionMeta: Map<string, { group: string; index: number }> = new Map();
+  private motionMeta: Map<string, { group: string; index: number; filename: string }> = new Map();
   private eyeBlinkIds: csmVector<CubismIdHandle> = new csmVector();
   private lipSyncIds: csmVector<CubismIdHandle> = new csmVector();
   private modelSetting: CubismModelSettingJson | null = null;
@@ -110,7 +110,7 @@ export class Live2DAnimator {
           const fullUrl = `${modelUrl}/${motionFileName}`;
           // 使用组名加索引作为动作名称
           const motionName = `${groupName}_${j}`;
-          this.motionMeta.set(motionName, { group: groupName, index: j });
+          this.motionMeta.set(motionName, { group: groupName, index: j, filename: motionFileName });
           motions.push({ name: motionName, url: fullUrl });
         }
       }
@@ -170,7 +170,9 @@ export class Live2DAnimator {
     this.motionQueueManager.startMotion(motion, false);
     this.isPlaying = true;
 
-    console.log(`[Live2D] Playing motion: ${motionName}`);
+    const meta = this.motionMeta.get(motionName);
+    const filename = meta?.filename || '';
+    console.log(`[Live2D] Playing motion: ${motionName}${filename ? ` (${filename})` : ''}`);
     return motionName;
   }
 
