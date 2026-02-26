@@ -1,25 +1,16 @@
 /**
- * Engine 统一导出
+ * Engine 统一导出 - Live2D 版本
  */
 
-export { createScene, renderFrame, resizeRenderer, updateControls, setupAvatarDrag } from './renderer';
-export type { SceneContext, RendererOptions } from './renderer';
-export { loadVrm, attachVrmToGroup } from './loadVrm';
-export type { LoadVrmOptions, LoadVrmResult } from './loadVrm';
-export { loadVrma } from './loadVrma';
-export type { GLTFWithVrmAnimations } from './loadVrma';
-export { setupClipAnimations } from './clipAnimations';
-export type { ClipAnimationsResult } from './clipAnimations';
-export { addVrmaClipsToMixer } from './vrmaClips';
-export type { VrmaEntry } from './vrmaClips';
-export {
-  applyEmotion,
-  applyLookAt,
-  applyBlink,
-  applyAnimationParams,
-  periodicBlinkValue,
-} from './avatarRig';
-export {
-  breathingOffset,
-  applyStateMotion,
-} from './animation';
+// Live2D 引擎模块
+export { Live2DManager } from './live2d/Live2DManager';
+export { Live2DModelLoader } from './live2d/Live2DModelLoader';
+export type { Live2DModelLoadOptions, Live2DModelLoadResult } from './live2d/Live2DModelLoader';
+export { Live2DRenderer } from './live2d/Live2DRenderer';
+export type { Live2DRendererConfig } from './live2d/Live2DRenderer';
+export { Live2DAnimator } from './live2d/Live2DAnimator';
+export type { MotionEntry, MotionManifest } from './live2d/Live2DAnimator';
+export { ParameterManager } from './live2d/ParameterManager';
+
+// Re-export CubismModel for external use
+export { CubismModel } from './live2d/model/cubismmodel';

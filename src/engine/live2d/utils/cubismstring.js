@@ -109,4 +109,3 @@ export var Live2DCubismFramework;
 (function (Live2DCubismFramework) {
     Live2DCubismFramework.CubismString = $.CubismString;
 })(Live2DCubismFramework || (Live2DCubismFramework = {}));
-//# sourceMappingURL=cubismstring.js.map

@@ -291,4 +291,3 @@ export var Live2DCubismFramework;
     Live2DCubismFramework.csmVector = $.csmVector;
     Live2DCubismFramework.iterator = $.iterator;
 })(Live2DCubismFramework || (Live2DCubismFramework = {}));
-//# sourceMappingURL=csmvector.js.map

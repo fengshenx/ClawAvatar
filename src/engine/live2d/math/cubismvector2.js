@@ -151,4 +151,3 @@ export var Live2DCubismFramework;
 (function (Live2DCubismFramework) {
     Live2DCubismFramework.CubismVector2 = $.CubismVector2;
 })(Live2DCubismFramework || (Live2DCubismFramework = {}));
-//# sourceMappingURL=cubismvector2.js.map

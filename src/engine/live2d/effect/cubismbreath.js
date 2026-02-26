@@ -87,4 +87,3 @@ export var Live2DCubismFramework;
     Live2DCubismFramework.BreathParameterData = $.BreathParameterData;
     Live2DCubismFramework.CubismBreath = $.CubismBreath;
 })(Live2DCubismFramework || (Live2DCubismFramework = {}));
-//# sourceMappingURL=cubismbreath.js.map

@@ -131,4 +131,3 @@ export var Live2DCubismFramework;
 (function (Live2DCubismFramework) {
     Live2DCubismFramework.CubismDebug = $.CubismDebug;
 })(Live2DCubismFramework || (Live2DCubismFramework = {}));
-//# sourceMappingURL=cubismdebug.js.map

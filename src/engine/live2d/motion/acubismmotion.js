@@ -323,4 +323,3 @@ export var Live2DCubismFramework;
 (function (Live2DCubismFramework) {
     Live2DCubismFramework.ACubismMotion = $.ACubismMotion;
 })(Live2DCubismFramework || (Live2DCubismFramework = {}));
-//# sourceMappingURL=acubismmotion.js.map

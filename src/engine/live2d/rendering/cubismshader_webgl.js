@@ -683,4 +683,3 @@ export var Live2DCubismFramework;
     Live2DCubismFramework.CubismShaderManager_WebGL = $.CubismShaderManager_WebGL;
     Live2DCubismFramework.ShaderNames = $.ShaderNames;
 })(Live2DCubismFramework || (Live2DCubismFramework = {}));
-//# sourceMappingURL=cubismshader_webgl.js.map

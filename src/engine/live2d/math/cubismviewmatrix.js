@@ -283,4 +283,3 @@ export var Live2DCubismFramework;
 (function (Live2DCubismFramework) {
     Live2DCubismFramework.CubismViewMatrix = $.CubismViewMatrix;
 })(Live2DCubismFramework || (Live2DCubismFramework = {}));
-//# sourceMappingURL=cubismviewmatrix.js.map

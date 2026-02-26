@@ -108,4 +108,3 @@ export var Live2DCubismFramework;
     Live2DCubismFramework.CubismModelUserData = $.CubismModelUserData;
     Live2DCubismFramework.CubismModelUserDataNode = $.CubismModelUserDataNode;
 })(Live2DCubismFramework || (Live2DCubismFramework = {}));
-//# sourceMappingURL=cubismmodeluserdata.js.map

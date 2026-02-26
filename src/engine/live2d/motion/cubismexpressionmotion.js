@@ -280,4 +280,3 @@ export var Live2DCubismFramework;
     Live2DCubismFramework.ExpressionBlendType = $.ExpressionBlendType;
     Live2DCubismFramework.ExpressionParameter = $.ExpressionParameter;
 })(Live2DCubismFramework || (Live2DCubismFramework = {}));
-//# sourceMappingURL=cubismexpressionmotion.js.map

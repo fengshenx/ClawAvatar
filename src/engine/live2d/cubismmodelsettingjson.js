@@ -683,4 +683,3 @@ export var Live2DCubismFramework;
     Live2DCubismFramework.CubismModelSettingJson = $.CubismModelSettingJson;
     Live2DCubismFramework.FrequestNode = $.FrequestNode;
 })(Live2DCubismFramework || (Live2DCubismFramework = {}));
-//# sourceMappingURL=cubismmodelsettingjson.js.map

@@ -3,7 +3,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useAvatarScene } from '@/hooks/useAvatarScene';
+import { useLive2DScene } from '@/hooks/useLive2DScene';
 import { AvatarStatusIndicator } from '@/ui/AvatarStatusIndicator';
 import { useElectronAvatarPlugin } from '@/hooks/useElectronAvatarPlugin';
 
@@ -19,11 +19,18 @@ function useWindowSize() {
 
 function App() {
   const { width, height } = useWindowSize();
-  const { canvasRef, loading, error, clipNames, getAvailableExpressions } = useAvatarScene({
+  const { canvasRef, loading, error, motionNames } = useLive2DScene({
     width,
     height,
   });
-  const [expressionNames, setExpressionNames] = useState<string[]>([]);
+  const expressionNames = [
+    'neutral',
+    'happy',
+    'sad',
+    'angry',
+    'surprised',
+    'relaxed',
+  ];
   const port =
     Number(
       import.meta.env?.VITE_AVATAR_EXTENSION_PORT ??
@@ -31,11 +38,7 @@ function App() {
         18802,
     ) || 18802;
   const wsUrl = `ws://127.0.0.1:${port}/extension`;
-  const plugin = useElectronAvatarPlugin(clipNames, expressionNames, wsUrl);
-
-  useEffect(() => {
-    setExpressionNames(getAvailableExpressions());
-  }, [clipNames, getAvailableExpressions]);
+  const plugin = useElectronAvatarPlugin(motionNames, expressionNames, wsUrl);
 
   return (
     <div className="app">
@@ -45,13 +48,13 @@ function App() {
         <AvatarStatusIndicator status={plugin.status} />
         {loading && (
           <div className="app__overlay">
-            <span>加载 VRM 中…</span>
+            <span>加载 Live2D 模型中…</span>
           </div>
         )}
         {error && (
           <div className="app__overlay app__overlay--error">
-            <span>{error}</span>
-            <p className="app__hint">请将 avatar.glb 文件放入 public/models/ 目录</p>
+            <span>Error: {error}</span>
+            <p className="app__hint">请查看终端日志</p>
           </div>
         )}
       </div>

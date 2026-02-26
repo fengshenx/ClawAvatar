@@ -116,4 +116,3 @@ export var Live2DCubismFramework;
     Live2DCubismFramework.CubismPhysicsTargetType = $.CubismPhysicsTargetType;
     Live2DCubismFramework.PhysicsJsonEffectiveForces = $.PhysicsJsonEffectiveForces;
 })(Live2DCubismFramework || (Live2DCubismFramework = {}));
-//# sourceMappingURL=cubismphysicsinternal.js.map

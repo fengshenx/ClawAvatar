@@ -100,4 +100,3 @@ export var Live2DCubismFramework;
 (function (Live2DCubismFramework) {
     Live2DCubismFramework.CubismModelUserDataJson = $.CubismModelUserDataJson;
 })(Live2DCubismFramework || (Live2DCubismFramework = {}));
-//# sourceMappingURL=cubismmodeluserdatajson.js.map

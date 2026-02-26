@@ -280,4 +280,3 @@ export var Live2DCubismFramework;
     Live2DCubismFramework.CubismRenderer = $.CubismRenderer;
     Live2DCubismFramework.CubismTextureColor = $.CubismTextureColor;
 })(Live2DCubismFramework || (Live2DCubismFramework = {}));
-//# sourceMappingURL=cubismrenderer.js.map

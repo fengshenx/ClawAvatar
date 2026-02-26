@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAppStore } from '@/app/state';
 import type { EmotionType, RenderMessage } from '@/protocol/types';
 
@@ -58,9 +58,17 @@ function resolveGestureName(action: string | undefined, clipNames: string[]): st
   if (!action) return undefined;
   const raw = action.trim();
   if (!raw) return undefined;
-  const lower = raw.toLowerCase();
-  const matched = clipNames.find((name) => name.trim().toLowerCase() === lower);
+  const normalized = normalizeActionToken(raw);
+  const matched = clipNames.find((name) => normalizeActionToken(name) === normalized);
   return matched ?? raw;
+}
+
+function normalizeActionToken(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/^idel\b/, 'idle')
+    .replace(/[\s-]+/g, '_');
 }
 
 function isElectronPluginAvailable(): boolean {
@@ -73,6 +81,7 @@ export function useElectronAvatarPlugin(clipNames: string[], expressions: string
   const [busy, setBusy] = useState(false);
 
   const enabled = useMemo(() => isElectronPluginAvailable(), []);
+  const lastLogSignatureRef = useRef('');
 
   useEffect(() => {
     if (!enabled || !window.avatarBridge) return;
@@ -82,16 +91,42 @@ export function useElectronAvatarPlugin(clipNames: string[], expressions: string
 
     let disposed = false;
     const offEvent = window.avatarBridge.onPluginEvent((event) => {
-      const gesture = resolveGestureName(event.action, clipNames);
+      const rawAction =
+        (typeof event.action === 'string' ? event.action : undefined) ??
+        (typeof (event as { gesture?: unknown }).gesture === 'string'
+          ? (event as { gesture: string }).gesture
+          : undefined) ??
+        (typeof (event as { actionName?: unknown }).actionName === 'string'
+          ? (event as { actionName: string }).actionName
+          : undefined) ??
+        (typeof (event as { event?: { action?: unknown } }).event?.action === 'string'
+          ? ((event as { event: { action: string } }).event.action)
+          : undefined);
+      const gesture = resolveGestureName(rawAction, clipNames);
+      const normalizedEmotion = normalizeEmotion(event.emotion);
+      const normalizedIntensity =
+        typeof event.intensity === 'number' && Number.isFinite(event.intensity)
+          ? Math.max(0, Math.min(1, event.intensity))
+          : 0.8;
+      const signature = `${rawAction ?? ''}|${normalizedEmotion ?? ''}|${normalizedIntensity}|${event.text ?? ''}|${gesture ?? ''}`;
+      if (lastLogSignatureRef.current !== signature) {
+        lastLogSignatureRef.current = signature;
+        console.log('[AvatarPlugin] Incoming sync event', {
+          action: rawAction,
+          emotion: event.emotion,
+          intensity: event.intensity,
+          text: event.text,
+          mappedGesture: gesture,
+          mappedEmotion: normalizedEmotion,
+          mappedIntensity: normalizedIntensity,
+        });
+      }
       const msg: RenderMessage = {
         type: 'render',
         session_id: BRIDGE_SESSION_ID,
         state: deriveWireState(),
-        emotion: normalizeEmotion(event.emotion),
-        intensity:
-          typeof event.intensity === 'number' && Number.isFinite(event.intensity)
-            ? Math.max(0, Math.min(1, event.intensity))
-            : 0.8,
+        emotion: normalizedEmotion,
+        intensity: normalizedIntensity,
         gesture,
         text: event.text,
       };

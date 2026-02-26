@@ -181,4 +181,3 @@ export var Live2DCubismFramework;
     Live2DCubismFramework.CubismEyeBlink = $.CubismEyeBlink;
     Live2DCubismFramework.EyeState = $.EyeState;
 })(Live2DCubismFramework || (Live2DCubismFramework = {}));
-//# sourceMappingURL=cubismeyeblink.js.map

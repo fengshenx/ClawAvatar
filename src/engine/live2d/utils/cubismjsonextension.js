@@ -96,4 +96,3 @@ export class CubismJsonExtension {
         return arr;
     }
 }
-//# sourceMappingURL=cubismjsonextension.js.map

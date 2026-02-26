@@ -1,6 +1,6 @@
 {
   "name": "claw-avatar",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "main": "electron/main.mjs",
@@ -12,17 +12,13 @@
     "build:electron": "npm run build && electron ."
   },
   "dependencies": {
-    "@pixiv/three-vrm": "^3.4.0",
-    "@pixiv/three-vrm-animation": "^3.4.5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "three": "^0.170.0",
     "zustand": "^5.0.0"
   },
   "devDependencies": {
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
-    "@types/three": "^0.170.0",
     "@vitejs/plugin-react": "^4.3.4",
     "concurrently": "^9.1.0",
     "electron": "^33.2.0",

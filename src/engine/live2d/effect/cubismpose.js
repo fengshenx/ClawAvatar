@@ -291,4 +291,3 @@ export var Live2DCubismFramework;
     Live2DCubismFramework.CubismPose = $.CubismPose;
     Live2DCubismFramework.PartData = $.PartData;
 })(Live2DCubismFramework || (Live2DCubismFramework = {}));
-//# sourceMappingURL=cubismpose.js.map

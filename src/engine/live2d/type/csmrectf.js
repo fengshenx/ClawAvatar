@@ -74,4 +74,3 @@ export var Live2DCubismFramework;
 (function (Live2DCubismFramework) {
     Live2DCubismFramework.csmRect = $.csmRect;
 })(Live2DCubismFramework || (Live2DCubismFramework = {}));
-//# sourceMappingURL=csmrectf.js.map

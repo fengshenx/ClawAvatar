@@ -1030,4 +1030,3 @@ export var Live2DCubismFramework;
     Live2DCubismFramework.JsonString = $.JsonString;
     Live2DCubismFramework.Value = $.Value;
 })(Live2DCubismFramework || (Live2DCubismFramework = {}));
-//# sourceMappingURL=cubismjson.js.map

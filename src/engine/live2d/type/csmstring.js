@@ -91,4 +91,3 @@ export var Live2DCubismFramework;
 (function (Live2DCubismFramework) {
     Live2DCubismFramework.csmString = $.csmString;
 })(Live2DCubismFramework || (Live2DCubismFramework = {}));
-//# sourceMappingURL=csmstring.js.map

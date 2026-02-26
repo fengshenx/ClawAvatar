@@ -504,4 +504,3 @@ export class CubismClippingManager {
         this._clippingMaskBufferSize = size;
     }
 }
-//# sourceMappingURL=cubismclippingmanager.js.map

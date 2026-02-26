@@ -10,4 +10,12 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  optimizeDeps: {
+    exclude: ['live2dcubismframework'],
+  },
+  build: {
+    rollupOptions: {
+      external: ['live2dcubismframework'],
+    },
+  },
 });

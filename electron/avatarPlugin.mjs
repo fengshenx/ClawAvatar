@@ -5,7 +5,7 @@ const DEFAULT_GATEWAY_URL = 'ws://127.0.0.1:18802/extension';
 const DEFAULT_SESSION_KEY = 'main';
 const DEFAULT_AVATAR_ID = 'avt_fox_v1';
 const DEFAULT_PROTOCOL_VERSION = '1.0';
-const PULL_INTERVAL_MS = 150;
+const PULL_INTERVAL_MS = Number(process.env.AVATAR_PULL_INTERVAL_MS || 400);
 const PULL_MAX = 20;
 const MAX_SEEN_EVENT_IDS = 1000;
 

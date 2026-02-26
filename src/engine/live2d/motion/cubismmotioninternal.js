@@ -109,4 +109,3 @@ export var Live2DCubismFramework;
     Live2DCubismFramework.CubismMotionSegment = $.CubismMotionSegment;
     Live2DCubismFramework.CubismMotionSegmentType = $.CubismMotionSegmentType;
 })(Live2DCubismFramework || (Live2DCubismFramework = {}));
-//# sourceMappingURL=cubismmotioninternal.js.map

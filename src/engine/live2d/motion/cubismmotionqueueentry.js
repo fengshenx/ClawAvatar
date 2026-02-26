@@ -213,4 +213,3 @@ export var Live2DCubismFramework;
 (function (Live2DCubismFramework) {
     Live2DCubismFramework.CubismMotionQueueEntry = $.CubismMotionQueueEntry;
 })(Live2DCubismFramework || (Live2DCubismFramework = {}));
-//# sourceMappingURL=cubismmotionqueueentry.js.map

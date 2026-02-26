@@ -804,4 +804,3 @@ export var Live2DCubismFramework;
     Live2DCubismFramework.CubismPhysics = $.CubismPhysics;
     Live2DCubismFramework.Options = $.Options;
 })(Live2DCubismFramework || (Live2DCubismFramework = {}));
-//# sourceMappingURL=cubismphysics.js.map

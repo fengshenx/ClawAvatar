@@ -11,6 +11,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const isMac = process.platform === 'darwin';
 const isDev = process.env.ELECTRON_DEV === '1' || process.argv.includes('--dev');
 const shouldOpenDevTools = process.env.ELECTRON_OPEN_DEVTOOLS === '1' || process.env.ELECTRON_DEV === '1';
+const useTransparentWindow = process.env.ELECTRON_OPAQUE !== '1';
 
 const WIN_WIDTH = 320;
 const WIN_HEIGHT = 420;
@@ -67,10 +68,11 @@ function createWindow() {
     x,
     y,
     frame: false,
-    transparent: true,
+    transparent: useTransparentWindow,
+    backgroundColor: useTransparentWindow ? '#00000000' : '#0f172a',
     alwaysOnTop,
     resizable: false,
-    hasShadow: isMac,
+    hasShadow: isMac && useTransparentWindow,
     skipTaskbar: true,
     fullscreenable: false,
     webPreferences: {
@@ -388,7 +390,9 @@ app.whenReady().then(() => {
   // 注册本地协议（必须在 app ready 后调用）
   protocol.registerFileProtocol(localProtocol, (request, callback) => {
     const url = request.url.replace(`${localProtocol}://`, '');
-    const filePath = path.join(distPath, url);
+    // 开发模式使用 public 目录，生产模式使用 dist 目录
+    const basePath = isDev ? path.join(__dirname, '../public') : distPath;
+    const filePath = path.join(basePath, url);
     callback(filePath);
   });
 

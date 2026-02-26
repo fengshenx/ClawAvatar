@@ -228,4 +228,3 @@ export var Live2DCubismFramework;
     Live2DCubismFramework.csmDelete = $.csmDelete;
     Live2DCubismFramework.CubismFramework = $.CubismFramework;
 })(Live2DCubismFramework || (Live2DCubismFramework = {}));
-//# sourceMappingURL=live2dcubismframework.js.map

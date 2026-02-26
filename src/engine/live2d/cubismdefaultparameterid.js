@@ -115,4 +115,3 @@ export var Live2DCubismFramework;
     Live2DCubismFramework.PartsArmRPrefix = $.CubismDefaultParameterId.PartsArmRPrefix;
     Live2DCubismFramework.PartsIdCore = $.CubismDefaultParameterId.PartsIdCore;
 })(Live2DCubismFramework || (Live2DCubismFramework = {}));
-//# sourceMappingURL=cubismdefaultparameterid.js.map

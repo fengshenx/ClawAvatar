@@ -678,4 +678,3 @@ export var Live2DCubismFramework;
     Live2DCubismFramework.CubismRenderTextureResource = $.CubismRenderTextureResource;
     Live2DCubismFramework.CubismRenderer_WebGL = $.CubismRenderer_WebGL;
 })(Live2DCubismFramework || (Live2DCubismFramework = {}));
-//# sourceMappingURL=cubismrenderer_webgl.js.map

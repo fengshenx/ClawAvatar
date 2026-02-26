@@ -278,4 +278,3 @@ export var Live2DCubismFramework;
     Live2DCubismFramework.csmPair = $.csmPair;
     Live2DCubismFramework.iterator = $.iterator;
 })(Live2DCubismFramework || (Live2DCubismFramework = {}));
-//# sourceMappingURL=csmmap.js.map

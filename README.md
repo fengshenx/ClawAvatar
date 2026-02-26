@@ -17,24 +17,27 @@ ClawAvatar 是 OpenClaw 的 Avatar 前端（Electron + Web 渲染层）。
 1. Electron 主进程：`electron/avatarPlugin.mjs`
 2. 本地 WS 握手：连接 `ws://127.0.0.1:18802/extension` 后调用 `avatar.hello`
 3. 拉取事件：周期调用 `avatar.pull`
-4. 前端渲染：`src/hooks/useElectronAvatarPlugin.ts` -> `src/hooks/useAvatarScene.ts`
+4. 前端渲染：`src/hooks/useElectronAvatarPlugin.ts` -> `src/hooks/useLive2DScene.ts`（Live2D 渲染）
 
 ## 前置要求
 
 - Node 22+
 - OpenClaw 仓库可运行（建议同机本地开发）
-- 本项目有可用 VRM 模型：`public/models/avatar.glb`
 
-VRM模型下载地址：
-形象1：https://hub.vroid.com/en/characters/2843975675147313744/models/5644550979324015604
+### Live2D 模型
 
-形象2: https://hub.vroid.com/en/characters/7939147878897061040/models/2292219474373673889
+项目内置默认模型 `Hiyori`，位于 `public/models/Hiyori/`。
 
-形象下载后，改名为 `avatar.glb` 并放入 `public/models/`
+如需替换为其他 Live2D 模型：
 
-动作下载地址：https://booth.pm/en/items/5512385
+1. 将模型文件放入 `public/models/<模型名>/`
+2. 修改 `src/hooks/useLive2DScene.ts` 中的 `DEFAULT_MODEL_URL`
 
-动作下载后，放入 `public/animations`， 如果你下载其他动作，需要修改`manifest.json`做映射。
+Live2D 模型需包含：
+- `.model3.json` 模型描述文件
+- `.moc3` 模型数据文件
+- 纹理图片
+- 可选：动作文件、表情文件、物理效果文件
 
 
 

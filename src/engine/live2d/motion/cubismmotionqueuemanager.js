@@ -235,4 +235,3 @@ export var Live2DCubismFramework;
     Live2DCubismFramework.CubismMotionQueueManager = $.CubismMotionQueueManager;
     Live2DCubismFramework.InvalidMotionQueueEntryHandleValue = $.InvalidMotionQueueEntryHandleValue;
 })(Live2DCubismFramework || (Live2DCubismFramework = {}));
-//# sourceMappingURL=cubismmotionqueuemanager.js.map
