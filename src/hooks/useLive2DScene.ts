@@ -45,6 +45,7 @@ export function useLive2DScene(options: UseLive2DSceneOptions) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [motionNames, setMotionNames] = useState<string[]>([]);
+  const [expressionNames, setExpressionNames] = useState<string[]>([]);
 
   // 记录上次的状态，用于检测变化时输出日志
   const lastActionNameRef = useRef<string | null>(null);
@@ -188,7 +189,9 @@ export function useLive2DScene(options: UseLive2DSceneOptions) {
           await animator.loadMotionManifest(manifestUrl);
         }
         const loadedMotions = animator.getLoadedMotionNames();
+        const loadedExpressions = animator.getLoadedExpressionNames();
         setMotionNames(loadedMotions);
+        setExpressionNames(loadedExpressions);
         idleMotionNameRef.current =
           loadedMotions.find((name) => /^idle_/i.test(name)) ?? loadedMotions[0] ?? null;
         if (idleMotionNameRef.current) {
@@ -456,12 +459,18 @@ export function useLive2DScene(options: UseLive2DSceneOptions) {
     return animatorRef.current?.playRandomInGroup(groupName) || null;
   }, []);
 
+  const playExpression = useCallback((name: string) => {
+    return animatorRef.current?.playExpression(name) || null;
+  }, []);
+
   return {
     canvasRef,
     loading,
     error,
     motionNames,
+    expressionNames,
     playMotion,
+    playExpression,
     getMotionGroupNames,
     playRandomInGroup,
   };

@@ -7,15 +7,6 @@ import { useLive2DScene } from '@/hooks/useLive2DScene';
 import { AvatarStatusIndicator } from '@/ui/AvatarStatusIndicator';
 import { useElectronAvatarPlugin } from '@/hooks/useElectronAvatarPlugin';
 
-const EXPRESSION_NAMES = [
-  'neutral',
-  'happy',
-  'sad',
-  'angry',
-  'surprised',
-  'relaxed',
-];
-
 function useWindowSize() {
   const [size, setSize] = useState({ width: window.innerWidth, height: window.innerHeight });
   useEffect(() => {
@@ -28,11 +19,18 @@ function useWindowSize() {
 
 function App() {
   const { width, height } = useWindowSize();
-  const { canvasRef, loading, error, motionNames, getMotionGroupNames, playRandomInGroup } =
-    useLive2DScene({
-      width,
-      height,
-    });
+  const {
+    canvasRef,
+    loading,
+    error,
+    motionNames,
+    expressionNames,
+    getMotionGroupNames,
+    playRandomInGroup,
+  } = useLive2DScene({
+    width,
+    height,
+  });
   const port =
     Number(
       import.meta.env?.VITE_AVATAR_EXTENSION_PORT ??
@@ -42,7 +40,7 @@ function App() {
   const wsUrl = `ws://127.0.0.1:${port}/extension`;
   const plugin = useElectronAvatarPlugin(
     motionNames,
-    EXPRESSION_NAMES,
+    expressionNames,
     wsUrl,
     getMotionGroupNames,
     playRandomInGroup,
