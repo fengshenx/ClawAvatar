@@ -1,6 +1,8 @@
 import { CubismModel } from './model/cubismmodel';
 import { CubismMotion } from './motion/cubismmotion';
 import { CubismMotionQueueManager } from './motion/cubismmotionqueuemanager';
+import { CubismExpressionMotion } from './motion/cubismexpressionmotion';
+import { CubismExpressionMotionManager } from './motion/cubismexpressionmotionmanager';
 import { CubismModelSettingJson } from './cubismmodelsettingjson';
 import { csmVector } from './type/csmvector';
 import { CubismIdHandle } from './id/cubismid';
@@ -21,7 +23,9 @@ export interface MotionManifest {
 export class Live2DAnimator {
   private model: CubismModel;
   private clips: Map<string, CubismMotion> = new Map();
+  private expressions: Map<string, CubismExpressionMotion> = new Map();
   private motionQueueManager: CubismMotionQueueManager;
+  private expressionMotionManager: CubismExpressionMotionManager;
   private isPlaying = false;
   private lastTime = 0;
   private motionMeta: Map<string, { group: string; index: number; filename: string }> = new Map();
@@ -32,6 +36,7 @@ export class Live2DAnimator {
   constructor(model: CubismModel) {
     this.model = model;
     this.motionQueueManager = new CubismMotionQueueManager();
+    this.expressionMotionManager = new CubismExpressionMotionManager();
   }
 
   /**
@@ -49,6 +54,9 @@ export class Live2DAnimator {
         false
       );
       const meta = this.motionMeta.get(name);
+      // 对齐 Demo：motion 自身不循环，循环由外部 finished -> play 控制
+      motion.setLoop(false);
+      motion.setLoopFadeIn(false);
       if (meta && this.modelSetting) {
         const fadeIn = this.modelSetting.getMotionFadeInTimeValue(meta.group, meta.index);
         if (fadeIn >= 0) motion.setFadeInTime(fadeIn);
@@ -69,6 +77,58 @@ export class Live2DAnimator {
   async loadMotions(motions: { name: string; url: string }[]): Promise<void> {
     const promises = motions.map((m) => this.loadMotion(m.name, m.url));
     await Promise.all(promises);
+  }
+
+  /**
+   * 加载表情文件（exp3.json）
+   */
+  async loadExpression(name: string, url: string): Promise<void> {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Failed to load expression: ${url}`);
+      }
+      const expressionBuffer = await response.arrayBuffer();
+      const expression = CubismExpressionMotion.create(
+        expressionBuffer,
+        expressionBuffer.byteLength
+      );
+      this.expressions.set(name, expression);
+    } catch (error) {
+      console.warn(`[Live2D] Failed to load expression: ${name}`, error);
+    }
+  }
+
+  /**
+   * 从 model3.json 加载表情清单
+   */
+  async loadExpressionFromModelSetting(modelUrl: string): Promise<void> {
+    try {
+      let setting = this.modelSetting;
+      if (!setting) {
+        const modelSetting = await fetchModelSettingBuffer(modelUrl);
+        if (!modelSetting) {
+          console.warn(`[Live2D] Failed to load model setting under: ${modelUrl}`);
+          return;
+        }
+        const modelJsonBuffer = modelSetting.buffer;
+        setting = new CubismModelSettingJson(modelJsonBuffer, modelJsonBuffer.byteLength);
+        this.modelSetting = setting;
+      }
+
+      this.expressions.clear();
+      const expressionCount = setting.getExpressionCount();
+      const tasks: Promise<void>[] = [];
+      for (let i = 0; i < expressionCount; i++) {
+        const expressionName = setting.getExpressionName(i);
+        const expressionFileName = setting.getExpressionFileName(i);
+        const fullUrl = `${modelUrl}/${expressionFileName}`;
+        tasks.push(this.loadExpression(expressionName, fullUrl));
+      }
+      await Promise.all(tasks);
+    } catch (error) {
+      console.warn(`[Live2D] Failed to load expressions from model setting:`, error);
+    }
   }
 
   /**
@@ -173,10 +233,6 @@ export class Live2DAnimator {
     // 开始新动画
     this.motionQueueManager.startMotion(motion, false);
     this.isPlaying = true;
-
-    const meta = this.motionMeta.get(motionName);
-    const filename = meta?.filename || '';
-    console.log(`[Live2D] Playing motion: ${motionName}${filename ? ` (${filename})` : ''}`);
     return motionName;
   }
 
@@ -189,12 +245,33 @@ export class Live2DAnimator {
   }
 
   /**
+   * 播放表情
+   */
+  playExpression(name: string): string | null {
+    const expressionName = this.resolveExpressionName(name);
+    if (!expressionName) return null;
+
+    const expression = this.expressions.get(expressionName);
+    if (!expression) return null;
+
+    this.expressionMotionManager.startMotion(expression, false);
+    return expressionName;
+  }
+
+  /**
    * 更新动画状态
    */
   update(dt: number): void {
     this.lastTime += dt;
     this.motionQueueManager.doUpdateMotion(this.model, this.lastTime);
     this.isPlaying = !this.motionQueueManager.isFinished();
+  }
+
+  /**
+   * 更新表情状态（对齐 Demo：在 motion/saveParameters 之后调用）
+   */
+  updateExpressions(dt: number): void {
+    this.expressionMotionManager.updateMotion(this.model, dt);
   }
 
   /**
@@ -205,10 +282,31 @@ export class Live2DAnimator {
   }
 
   /**
+   * 当前 motion 队列是否已播放完成
+   */
+  isMotionFinished(): boolean {
+    return this.motionQueueManager.isFinished();
+  }
+
+  /**
+   * 是否正在播放表情
+   */
+  isPlayingExpression(): boolean {
+    return !this.expressionMotionManager.isFinished();
+  }
+
+  /**
    * 获取已加载的动画名称列表
    */
   getLoadedMotionNames(): string[] {
     return Array.from(this.clips.keys());
+  }
+
+  /**
+   * 获取已加载的表情名称列表
+   */
+  getLoadedExpressionNames(): string[] {
+    return Array.from(this.expressions.keys());
   }
 
   /**
@@ -262,6 +360,16 @@ export class Live2DAnimator {
     if (byPrefix) return byPrefix;
 
     return null;
+  }
+
+  private resolveExpressionName(input: string): string | null {
+    if (!input) return null;
+    if (this.expressions.has(input)) return input;
+
+    const target = input.trim().toLowerCase();
+    const names = this.getLoadedExpressionNames();
+    const exact = names.find((n) => n.toLowerCase() === target);
+    return exact ?? null;
   }
 }
 

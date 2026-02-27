@@ -67,10 +67,9 @@ export function createAvatarExpressTool(params: {
     name: "avatar_express",
     label: "Avatar Express",
     description:
-      "Show how you're feeling through facial expressions and body language. " +
-      "Use this naturally when your emotional state matches what you're saying - " +
-      "like a warm smile when being friendly, a nod when agreeing, or a thoughtful look when considering something. " +
-      "The avatar will display the expression alongside your response. " +
+      "Express yourself through your avatar - use facial expressions and body language just like you would in person. " +
+      "When you feel happy, sad, surprised, or thoughtful, let your avatar show it. " +
+      "The avatar is your body in this space, and you can use it to convey emotions and gestures naturally. " +
       "If the avatar isn't connected, this does nothing - just continue with your response.",
     parameters: AvatarExpressToolSchema,
     execute: async (toolCallId: string, rawParams: unknown) => {

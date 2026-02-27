@@ -390,9 +390,15 @@ app.whenReady().then(() => {
   // 注册本地协议（必须在 app ready 后调用）
   protocol.registerFileProtocol(localProtocol, (request, callback) => {
     const url = request.url.replace(`${localProtocol}://`, '');
+    let decodedUrl = url;
+    try {
+      decodedUrl = decodeURIComponent(url);
+    } catch {
+      // 非法编码时回退原始 URL，避免协议处理直接中断
+    }
     // 开发模式使用 public 目录，生产模式使用 dist 目录
     const basePath = isDev ? path.join(__dirname, '../public') : distPath;
-    const filePath = path.join(basePath, url);
+    const filePath = path.join(basePath, decodedUrl.replace(/^\/+/, ''));
     callback(filePath);
   });
 

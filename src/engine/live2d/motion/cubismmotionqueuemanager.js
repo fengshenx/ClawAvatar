@@ -63,6 +63,8 @@ export class CubismMotionQueueManager {
         motionQueueEntry = new CubismMotionQueueEntry(); // 終了時に破棄する
         motionQueueEntry._autoDelete = autoDelete;
         motionQueueEntry._motion = motion;
+        // 设置 startTime 为 0，确保从 motion 开始时刻播放
+        motionQueueEntry.setStartTime(0);
         this._motions.pushBack(motionQueueEntry);
         return motionQueueEntry._motionQueueEntryHandle;
     }

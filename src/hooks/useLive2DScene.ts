@@ -13,10 +13,14 @@ import {
 } from '@/engine';
 import { CubismPhysics } from '@/engine/live2d/physics/cubismphysics';
 import { CubismPose } from '@/engine/live2d/effect/cubismpose';
+import { CubismBreath, BreathParameterData } from '@/engine/live2d/effect/cubismbreath';
+import { CubismFramework } from '@/engine/live2d/live2dcubismframework';
+import { CubismDefaultParameterId } from '@/engine/live2d/cubismdefaultparameterid';
+import { csmVector } from '@/engine/live2d/type/csmvector';
 import { useAppStore } from '@/app/state';
 import { isElectron } from '@/config';
 
-const DEFAULT_MODEL_URL = '/models/Hiyori';
+const DEFAULT_MODEL_URL = '/models/Purple紫';
 
 export interface UseLive2DSceneOptions {
   modelUrl?: string;
@@ -36,6 +40,7 @@ export function useLive2DScene(options: UseLive2DSceneOptions) {
   const paramManagerRef = useRef<ParameterManager | null>(null);
   const physicsRef = useRef<CubismPhysics | null>(null);
   const poseRef = useRef<CubismPose | null>(null);
+  const breathRef = useRef<CubismBreath | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -45,8 +50,6 @@ export function useLive2DScene(options: UseLive2DSceneOptions) {
   const lastActionNameRef = useRef<string | null>(null);
   const lastGestureSeqRef = useRef(0);
   const idleMotionNameRef = useRef<string | null>(null);
-  const lastLoopMotionRef = useRef<string | null>(null);
-  const wasPlayingRef = useRef(false);
 
   // ⚡ 性能优化：用 ref 缓存 Store 状态，避免每帧读取
   const emotionCacheRef = useRef<string>('neutral');
@@ -54,10 +57,6 @@ export function useLive2DScene(options: UseLive2DSceneOptions) {
   const gestureCacheRef = useRef<string | null>(null);
   const gestureSeqCacheRef = useRef(0);
   
-  // ⚡ 性能优化：用于表情脏检查的专用 Ref
-  const lastAppliedEmotionRef = useRef<string | null>(null);
-  const lastAppliedIntensityRef = useRef(-1);
-
   // 鼠标拖拽状态
   const isDraggingRef = useRef(false);
   const lastMouseRef = useRef({ x: 0, y: 0 });
@@ -119,6 +118,58 @@ export function useLive2DScene(options: UseLive2DSceneOptions) {
         rendererRef.current = renderer;
         physicsRef.current = physics;
         poseRef.current = pose;
+        const breath = CubismBreath.create();
+        const idManager = CubismFramework.getIdManager();
+        const breathParameters = new csmVector<BreathParameterData>();
+        breathParameters.pushBack(
+          new BreathParameterData(
+            idManager.getId(CubismDefaultParameterId.ParamAngleX ?? 'ParamAngleX'),
+            0.0,
+            15.0,
+            6.5345,
+            0.5
+          )
+        );
+        breathParameters.pushBack(
+          new BreathParameterData(
+            idManager.getId(CubismDefaultParameterId.ParamAngleY ?? 'ParamAngleY'),
+            0.0,
+            8.0,
+            3.5345,
+            0.5
+          )
+        );
+        breathParameters.pushBack(
+          new BreathParameterData(
+            idManager.getId(CubismDefaultParameterId.ParamAngleZ ?? 'ParamAngleZ'),
+            0.0,
+            10.0,
+            5.5345,
+            0.5
+          )
+        );
+        breathParameters.pushBack(
+          new BreathParameterData(
+            idManager.getId(CubismDefaultParameterId.ParamBodyAngleX ?? 'ParamBodyAngleX'),
+            0.0,
+            4.0,
+            15.5345,
+            0.5
+          )
+        );
+        breathParameters.pushBack(
+          new BreathParameterData(
+            idManager.getId(CubismDefaultParameterId.ParamBreath ?? 'ParamBreath'),
+            0.5,
+            0.5,
+            3.2345,
+            1.0
+          )
+        );
+        breath.setParameters(breathParameters);
+        breathRef.current = breath;
+        // 对齐 Demo：模型完成加载后先建立一份参数基线
+        model.saveParameters();
         {
           const size = getCanvasSize();
           renderer.resize(size.width, size.height);
@@ -130,6 +181,7 @@ export function useLive2DScene(options: UseLive2DSceneOptions) {
 
         // 优先从 model3.json / *.model3.json 中读取动作，避免对可选 motions.json 的无效请求
         await animator.loadMotionFromModelSetting(resolvedUrl);
+        await animator.loadExpressionFromModelSetting(resolvedUrl);
         // 兼容旧项目：若模型配置里没有 motions，再尝试旧的外部清单
         if (animator.getLoadedMotionNames().length === 0) {
           const manifestUrl = resolveModelUrl(`${modelUrl}/motions.json`);
@@ -142,8 +194,7 @@ export function useLive2DScene(options: UseLive2DSceneOptions) {
         if (idleMotionNameRef.current) {
           const played = animator.play(idleMotionNameRef.current);
           if (played) {
-            lastLoopMotionRef.current = played;
-            wasPlayingRef.current = true;
+            lastActionNameRef.current = played;
           }
         }
 
@@ -204,11 +255,15 @@ export function useLive2DScene(options: UseLive2DSceneOptions) {
           const paramManager = paramManagerRef.current;
           const physics = physicsRef.current;
           const pose = poseRef.current;
+          const breath = breathRef.current;
 
           if (!model || !renderer || !animator || !paramManager) {
             // ⚡ 性能优化：没有模型时停止循环，等模型加载后再启动
             return;
           }
+
+          // 对齐 Cubism Demo：每帧先恢复保存的参数基线，再应用 motion
+          model.loadParameters();
 
           // 更新动画
           try {
@@ -224,39 +279,42 @@ export function useLive2DScene(options: UseLive2DSceneOptions) {
             const played = animator.play(gestureCacheRef.current);
             if (played) {
               lastActionNameRef.current = played;
-              lastLoopMotionRef.current = played;
-              wasPlayingRef.current = true;
             }
           }
 
-          const isPlayingNow = animator.isPlayingMotion();
-          if (!isPlayingNow && wasPlayingRef.current && lastLoopMotionRef.current) {
-            const replayed = animator.play(lastLoopMotionRef.current);
-            if (replayed) {
-              wasPlayingRef.current = true;
-            } else {
-              wasPlayingRef.current = false;
+          // 对齐 Demo：当 motion 播放完成时，自动回到 idle
+          if (animator.isMotionFinished() && idleMotionNameRef.current) {
+            const replayedIdle = animator.play(idleMotionNameRef.current);
+            if (replayedIdle) {
+              lastActionNameRef.current = replayedIdle;
             }
-          } else {
-            wasPlayingRef.current = isPlayingNow;
           }
 
-          // 如果没有播放动作，应用表情
-          if (!animator?.isPlayingMotion()) {
-            // ⚡ 性能优化：仅在表情或强度变化时应用
+          // 将 motion 结果作为本帧的参数基线
+          model.saveParameters();
+
+          // 对齐 Demo：表情在 motion/saveParameters 之后叠加
+          try {
+            animator.updateExpressions(dt);
+          } catch (err) {
+            console.error('[Live2D] Expression update error:', err);
+          }
+
+          // 如果没有播放动作且没有播放表情，应用参数级表情作为兜底
+          if (!animator.isPlayingMotion() && !animator.isPlayingExpression()) {
             const currentEmotion = emotionCacheRef.current;
             const currentIntensity = intensityCacheRef.current;
-            
-            if (lastAppliedEmotionRef.current !== currentEmotion || lastAppliedIntensityRef.current !== currentIntensity) {
-                paramManager.applyEmotion(currentEmotion, currentIntensity);
-                lastAppliedEmotionRef.current = currentEmotion;
-                lastAppliedIntensityRef.current = currentIntensity;
-            }
-            
+
+            // loadParameters/saveParameters 之后需要每帧应用，否则参数会被恢复到 motion 基线
+            paramManager.applyEmotion(currentEmotion, currentIntensity);
+
             // 🚩 已删除 applyBlinking(1) 和 applyBreathing
             // 只有当参数真正变化时，model.update() 才会产生较小的 CPU 开销
           }
 
+          if (breath) {
+            breath.updateParameters(model, dt);
+          }
           if (physics) {
             physics.evaluate(model, dt);
           }
@@ -367,6 +425,10 @@ export function useLive2DScene(options: UseLive2DSceneOptions) {
       if (poseRef.current) {
         CubismPose.delete(poseRef.current);
         poseRef.current = null;
+      }
+      if (breathRef.current) {
+        CubismBreath.delete(breathRef.current);
+        breathRef.current = null;
       }
     };
   }, [modelUrl, width, height]);
