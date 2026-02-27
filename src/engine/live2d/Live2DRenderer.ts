@@ -16,6 +16,7 @@ export interface Live2DRendererConfig {
 export class Live2DRenderer {
   private static readonly MODEL_SCALE = 1;
   private canvas: HTMLCanvasElement;
+  // width/height are logical (CSS pixel) sizes used by layout/aspect calculations.
   private width: number;
   private height: number;
   private gl: WebGLRenderingContext | WebGL2RenderingContext | null = null;
@@ -24,6 +25,11 @@ export class Live2DRenderer {
   private modelCanvasWidth = 0;
   private modelCanvasHeight = 0;
   private renderViewport: number[] = [0, 0, 0, 0];
+  private anisotropyExt:
+    | EXT_texture_filter_anisotropic
+    | { TEXTURE_MAX_ANISOTROPY_EXT: number; MAX_TEXTURE_MAX_ANISOTROPY_EXT: number }
+    | null = null;
+  private maxAnisotropy = 0;
 
   constructor(config: Live2DRendererConfig) {
     this.canvas = config.canvas;
@@ -34,7 +40,7 @@ export class Live2DRenderer {
     const options: WebGLContextAttributes & {
       desynchronized?: boolean;
     } = {
-      antialias: false,
+      antialias: true,
       alpha: true,
       depth: false,
       stencil: false,
@@ -57,20 +63,19 @@ export class Live2DRenderer {
     // 该 SDK 版本未实现 CubismRenderer_WebGL.create()，需直接 new
     this.renderer = new CubismRenderer_WebGL();
 
-    // 设置 Canvas 尺寸
-    this.canvas.width = this.width;
-    this.canvas.height = this.height;
-
-    // 设置视口
-    gl.viewport(0, 0, this.width, this.height);
+    // 设置 Canvas 像素尺寸（按 DPR 放大）与视口
+    this.applyCanvasSize();
+    gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
     this.renderViewport[0] = 0;
     this.renderViewport[1] = 0;
-    this.renderViewport[2] = this.width;
-    this.renderViewport[3] = this.height;
+    this.renderViewport[2] = gl.drawingBufferWidth;
+    this.renderViewport[3] = gl.drawingBufferHeight;
 
     // 启用混合
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+
+    this.initAnisotropy();
   }
 
   /**
@@ -87,7 +92,12 @@ export class Live2DRenderer {
       // Cubism WebGL 渲染路径要求使用预乘 Alpha
       this.renderer.setIsPremultipliedAlpha(true);
       this.renderer.setModelColor(1, 1, 1, 1);
-      this.renderer.useHighPrecisionMask(false);
+      this.renderer.useHighPrecisionMask(true);
+      // NOTE: setClippingMaskBufferSize 会重建 clipping manager。该 SDK 版本中重建后不会自动继承 GL，
+      // 会导致 draw 时 this.gl 为 undefined 并在 createTexture 处崩溃，因此这里先不改默认值。
+      if (this.maxAnisotropy > 0) {
+        this.renderer.setAnisotropy(this.maxAnisotropy);
+      }
       this.updateMvpMatrix();
     }
   }
@@ -105,8 +115,17 @@ export class Live2DRenderer {
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.generateMipmap(gl.TEXTURE_2D);
+    if (this.anisotropyExt && this.maxAnisotropy > 0) {
+      gl.texParameterf(
+        gl.TEXTURE_2D,
+        this.anisotropyExt.TEXTURE_MAX_ANISOTROPY_EXT,
+        this.maxAnisotropy
+      );
+    }
+    gl.bindTexture(gl.TEXTURE_2D, null);
 
     this.textures[index] = texture;
     this.renderer.bindTexture(index, texture as WebGLTexture);
@@ -140,15 +159,14 @@ export class Live2DRenderer {
   resize(width: number, height: number): void {
     this.width = width;
     this.height = height;
-    this.canvas.width = width;
-    this.canvas.height = height;
+    this.applyCanvasSize();
 
     if (this.gl) {
-      this.gl.viewport(0, 0, width, height);
+      this.gl.viewport(0, 0, this.gl.drawingBufferWidth, this.gl.drawingBufferHeight);
       this.renderViewport[0] = 0;
       this.renderViewport[1] = 0;
-      this.renderViewport[2] = width;
-      this.renderViewport[3] = height;
+      this.renderViewport[2] = this.gl.drawingBufferWidth;
+      this.renderViewport[3] = this.gl.drawingBufferHeight;
     }
     this.updateMvpMatrix();
   }
@@ -197,5 +215,25 @@ export class Live2DRenderer {
 
     projection.multiplyByMatrix(modelMatrix);
     this.renderer.setMvpMatrix(projection);
+  }
+
+  private applyCanvasSize(): void {
+    const dpr =
+      typeof window !== 'undefined' && Number.isFinite(window.devicePixelRatio)
+        ? Math.max(1, window.devicePixelRatio)
+        : 1;
+    this.canvas.width = Math.max(1, Math.round(this.width * dpr));
+    this.canvas.height = Math.max(1, Math.round(this.height * dpr));
+  }
+
+  private initAnisotropy(): void {
+    if (!this.gl) return;
+    const ext =
+      this.gl.getExtension('EXT_texture_filter_anisotropic') ||
+      this.gl.getExtension('WEBKIT_EXT_texture_filter_anisotropic') ||
+      this.gl.getExtension('MOZ_EXT_texture_filter_anisotropic');
+    if (!ext) return;
+    this.anisotropyExt = ext;
+    this.maxAnisotropy = this.gl.getParameter(ext.MAX_TEXTURE_MAX_ANISOTROPY_EXT) || 0;
   }
 }
