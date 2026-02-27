@@ -57,6 +57,10 @@ export function useLive2DScene(options: UseLive2DSceneOptions) {
   const intensityCacheRef = useRef(0);
   const gestureCacheRef = useRef<string | null>(null);
   const gestureSeqCacheRef = useRef(0);
+
+  // 跟踪 emotion 变化，用于触发 expression 播放
+  const lastEmotionRef = useRef<string | null>(null);
+  const expressionNamesRef = useRef<string[]>([]);
   
   // 鼠标拖拽状态
   const isDraggingRef = useRef(false);
@@ -192,6 +196,7 @@ export function useLive2DScene(options: UseLive2DSceneOptions) {
         const loadedExpressions = animator.getLoadedExpressionNames();
         setMotionNames(loadedMotions);
         setExpressionNames(loadedExpressions);
+        expressionNamesRef.current = loadedExpressions;
         idleMotionNameRef.current =
           loadedMotions.find((name) => /^idle_/i.test(name)) ?? loadedMotions[0] ?? null;
         if (idleMotionNameRef.current) {
@@ -301,6 +306,26 @@ export function useLive2DScene(options: UseLive2DSceneOptions) {
             animator.updateExpressions(dt);
           } catch (err) {
             console.error('[Live2D] Expression update error:', err);
+          }
+
+          // 检测 emotion 变化，播放对应的 expression motion
+          const currentEmotion = emotionCacheRef.current;
+          if (currentEmotion && currentEmotion !== lastEmotionRef.current) {
+            lastEmotionRef.current = currentEmotion;
+            // 检查是否是模型支持的表情
+            const expNames = expressionNamesRef.current;
+            if (expNames.length > 0) {
+              // 尝试匹配表情名称（支持模糊匹配）
+              const matched = expNames.find(
+                (name) => name.toLowerCase() === currentEmotion.toLowerCase()
+              );
+              if (matched) {
+                const played = animator.playExpression(matched);
+                if (played) {
+                  console.log(`[Live2D] Playing expression: ${played}`);
+                }
+              }
+            }
           }
 
           // 如果没有播放动作且没有播放表情，应用参数级表情作为兜底

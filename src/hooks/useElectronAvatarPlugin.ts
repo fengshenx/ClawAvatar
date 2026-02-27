@@ -142,13 +142,15 @@ export function useElectronAvatarPlugin(
   const clipNamesRef = useRef<string[]>(clipNames);
   const getMotionGroupNamesRef = useRef<typeof getMotionGroupNames>(getMotionGroupNames);
   const playRandomInGroupRef = useRef<typeof playRandomInGroup>(playRandomInGroup);
+  const expressionsRef = useRef<string[]>(expressions);
   const lastCapabilitiesSignatureRef = useRef('');
 
   useEffect(() => {
     clipNamesRef.current = clipNames;
     getMotionGroupNamesRef.current = getMotionGroupNames;
     playRandomInGroupRef.current = playRandomInGroup;
-  }, [clipNames, getMotionGroupNames, playRandomInGroup]);
+    expressionsRef.current = expressions;
+  }, [clipNames, getMotionGroupNames, playRandomInGroup, expressions]);
 
   useEffect(() => {
     if (!enabled || !window.avatarBridge) return;
@@ -197,7 +199,22 @@ export function useElectronAvatarPlugin(
         gesture = resolveGestureName(rawAction, clipNamesRef.current, motionGroupNames);
       }
 
-      const normalizedEmotionResult = normalizeEmotion(event.emotion);
+      // 优先从模型支持的表情列表中匹配，其次使用已知情绪列表
+      let normalizedEmotionResult: EmotionType | undefined;
+      const rawEmotion = event.emotion;
+      if (rawEmotion) {
+        const v = rawEmotion.trim().toLowerCase();
+        // 先检查模型支持的表情
+        const modelExpMatch = expressionsRef.current.find(
+          (name) => name.toLowerCase() === v
+        );
+        if (modelExpMatch) {
+          normalizedEmotionResult = modelExpMatch as EmotionType;
+        } else {
+          // 再检查已知情绪列表
+          normalizedEmotionResult = normalizeEmotion(rawEmotion);
+        }
+      }
       const normalizedIntensity =
         typeof event.intensity === 'number' && Number.isFinite(event.intensity)
           ? Math.max(0, Math.min(1, event.intensity))
