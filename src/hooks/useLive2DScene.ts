@@ -55,6 +55,9 @@ export function useLive2DScene(options: UseLive2DSceneOptions) {
     onMouseUp?: () => void;
   }>({});
 
+  // 存储可见性变化处理器
+  const visibilityHandlerRef = useRef<(() => void) | null>(null);
+
   // 处理 Electron 本地文件协议
   function resolveModelUrl(url: string): string {
     // 只有在 Electron 生产构建时才使用 electron-local 协议
@@ -128,11 +131,31 @@ export function useLive2DScene(options: UseLive2DSceneOptions) {
 
         // 启动渲染循环
         let lastTime = performance.now();
+        let isPaused = false;
+
+        // 监听页面可见性变化
+        visibilityHandlerRef.current = () => {
+          if (document.hidden) {
+            isPaused = true;
+            if (animationFrameId) {
+              cancelAnimationFrame(animationFrameId);
+              animationFrameId = 0;
+            }
+          } else {
+            isPaused = false;
+            lastTime = performance.now();
+            loop();
+          }
+        };
+
+        document.addEventListener('visibilitychange', visibilityHandlerRef.current);
+
         const loop = () => {
+          if (isPaused) return;
+
           animationFrameId = requestAnimationFrame(loop);
 
           const currentTime = performance.now();
-          if (document.hidden) return;
           const dt = (currentTime - lastTime) / 1000; // 转换为秒
           lastTime = currentTime;
 
@@ -195,7 +218,7 @@ export function useLive2DScene(options: UseLive2DSceneOptions) {
           // 更新模型
           model.update();
 
-          // 渲染
+          // 脏检查：只有当模型实际更新时才渲染
           try {
             renderer.render(model);
           } catch (err) {
@@ -246,8 +269,17 @@ export function useLive2DScene(options: UseLive2DSceneOptions) {
 
     return () => {
       disposed = true;
+
+      // 清理可见性监听器
+      if (visibilityHandlerRef.current) {
+        document.removeEventListener('visibilitychange', visibilityHandlerRef.current);
+        visibilityHandlerRef.current = null;
+      }
+
+      // 取消动画帧
       if (animationFrameId) {
         cancelAnimationFrame(animationFrameId);
+        animationFrameId = 0;
       }
 
       // 清理鼠标拖拽事件

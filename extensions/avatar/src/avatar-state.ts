@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import type { WebSocket } from "ws";
 
 export const AVATAR_PROTOCOL_VERSION = "1.0";
 
@@ -25,6 +26,7 @@ export type AvatarProfile = {
   acceptedCapabilities: AvatarCapabilities;
   negotiatedAt: number;
   lastSeenAt: number;
+  ws?: WebSocket; // WebSocket 客户端引用
 };
 
 export type AvatarEvent = {
@@ -150,6 +152,59 @@ export class AvatarState {
   private eventsBySession = new Map<string, AvatarEvent[]>();
 
   constructor(private queueLimit = DEFAULT_QUEUE_LIMIT) {}
+
+  /**
+   * 注册 WebSocket 客户端（用于推送）
+   */
+  registerWebSocket(sessionKey: string, ws: WebSocket): void {
+    const profile = this.profilesBySession.get(sessionKey);
+    if (profile) {
+      profile.ws = ws;
+      profile.lastSeenAt = Date.now();
+    }
+  }
+
+  /**
+   * 移除 WebSocket 客户端
+   */
+  unregisterWebSocket(sessionKey: string): void {
+    const profile = this.profilesBySession.get(sessionKey);
+    if (profile) {
+      profile.ws = undefined;
+    }
+  }
+
+  /**
+   * 推送事件到 WebSocket 客户端
+   */
+  private pushEventToClient(sessionKey: string, event: AvatarEvent): void {
+    const profile = this.profilesBySession.get(sessionKey);
+    if (!profile || !profile.ws) {
+      // 如果没有 WebSocket 连接，回退到队列（供轮询使用）
+      this.enqueueEvent(sessionKey, event);
+      return;
+    }
+
+    if (profile.ws.readyState !== 1 /* WebSocket.OPEN */) {
+      // 连接不可用，回退到队列
+      profile.ws = undefined;
+      this.enqueueEvent(sessionKey, event);
+      return;
+    }
+
+    try {
+      profile.ws.send(
+        JSON.stringify({
+          type: "event",
+          payload: event,
+        }),
+      );
+    } catch (e) {
+      // 发送失败，回退到队列
+      profile.ws = undefined;
+      this.enqueueEvent(sessionKey, event);
+    }
+  }
 
   hello(input: AvatarHelloInput): AvatarHelloAck {
     const sessionKey = normalizeSessionKey(input.sessionKey);
@@ -344,7 +399,8 @@ export class AvatarState {
       },
     };
 
-    this.enqueueEvent(resolvedSessionKey, event);
+    // 使用推送而不是队列
+    this.pushEventToClient(resolvedSessionKey, event);
 
     return {
       accepted: true,

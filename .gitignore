@@ -8,6 +8,11 @@ dist/
 electron/dist/
 out/
 
+# Electron build
+!build/entitlements.mac.plist
+!build/icon.icns
+build/*.iconset/
+
 # Editor
 .vscode/
 .idea/

@@ -291,6 +291,10 @@ function createLocalExtensionService(params: {
 
           const result = handler(frame.params);
           if (result.ok) {
+            // 注册 WebSocket 客户端（用于推送）
+            if (frame.method === "avatar.hello") {
+              state.registerWebSocket(client.sessionKey, ws);
+            }
             sendWsOk(ws, frame.id, result.payload);
             return;
           }
@@ -298,6 +302,8 @@ function createLocalExtensionService(params: {
         });
 
         ws.on("close", () => {
+          // 移除 WebSocket 注册
+          state.unregisterWebSocket(client.sessionKey);
           state.goodbye(client.sessionKey, client.connectionId);
         });
       });
@@ -427,6 +433,8 @@ const plugin = {
       const actions = capabilities.actions.join(", ") || "(none)";
 
       // Natural avatar expression - treat as natural part of conversation
+      const hasTalking = capabilities.actions.includes("talking");
+
       return {
         prependContext: [
           "<avatar_expression>",
@@ -440,11 +448,17 @@ const plugin = {
           "• When the conversation shifts to a different emotional context",
           "• Small, genuine expressions work better than dramatic ones",
           "",
+          hasTalking
+            ? "• When sending a message or response, consider calling avatar_express with action='talking' to show the avatar speaking"
+            : "",
+          "",
           "You're encouraged to call this whenever it feels right - don't hold back on expressing yourself naturally.",
           "",
           "If the avatar isn't connected, simply continue your response normally.",
           "</avatar_expression>",
-        ].join("\n"),
+        ]
+          .filter((line) => line !== "")
+          .join("\n"),
       };
     });
   },

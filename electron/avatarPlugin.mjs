@@ -5,7 +5,7 @@ const DEFAULT_GATEWAY_URL = 'ws://127.0.0.1:18802/extension';
 const DEFAULT_SESSION_KEY = 'main';
 const DEFAULT_AVATAR_ID = 'avt_fox_v1';
 const DEFAULT_PROTOCOL_VERSION = '1.0';
-const PULL_INTERVAL_MS = Number(process.env.AVATAR_PULL_INTERVAL_MS || 400);
+const PULL_INTERVAL_MS = Number(process.env.AVATAR_PULL_INTERVAL_MS || 1000);
 const PULL_MAX = 20;
 const MAX_SEEN_EVENT_IDS = 1000;
 
@@ -215,6 +215,24 @@ export class AvatarPluginClient {
       return;
     }
     if (!msg || typeof msg !== 'object') return;
+
+    // 处理服务器推送的事件
+    if (msg.type === 'event') {
+      const event = msg.payload;
+      if (!event || typeof event !== 'object') return;
+
+      // 去重
+      if (typeof event.eventId === 'string' && this.seenEventSet.has(event.eventId)) {
+        return;
+      }
+      if (typeof event.eventId === 'string') this.rememberEvent(event.eventId);
+
+      // 触发事件回调
+      this.onEvent?.(event);
+      return;
+    }
+
+    // 处理请求响应
     if (msg.type !== 'res' || typeof msg.id !== 'string') return;
 
     const pending = this.pending.get(msg.id);
@@ -280,7 +298,7 @@ export class AvatarPluginClient {
 
     await this.sendHello();
     this.gatewayConnected = true;
-    this.startPullLoop();
+    // 不再需要轮询，使用服务器推送
     this.state.phase = 'connected';
     this.state.paired = true;
     this.state.lastError = null;
@@ -308,32 +326,8 @@ export class AvatarPluginClient {
   }
 
   startPullLoop() {
-    this.stopPullLoop();
-    this.pullTimer = setInterval(async () => {
-      if (this.pullInFlight) return;
-      this.pullInFlight = true;
-      try {
-        const payload = await this.sendReq('avatar.pull', {
-          sessionKey: this.sessionKey,
-          max: PULL_MAX,
-        });
-        const events = Array.isArray(payload?.events) ? payload.events : [];
-        for (const event of events) {
-          if (!event || typeof event !== 'object') continue;
-          if (typeof event.eventId === 'string' && this.seenEventSet.has(event.eventId)) {
-            continue;
-          }
-          if (typeof event.eventId === 'string') this.rememberEvent(event.eventId);
-          this.onEvent?.(event);
-        }
-      } catch (e) {
-        const message = e instanceof Error ? e.message : String(e);
-        this.state.lastError = message;
-        this.emitStatus();
-      } finally {
-        this.pullInFlight = false;
-      }
-    }, PULL_INTERVAL_MS);
+    // 不再需要轮询，使用推送
+    // 保留空方法以兼容现有代码
   }
 
   stopPullLoop() {
