@@ -18,7 +18,7 @@ export class Live2DRenderer {
   private canvas: HTMLCanvasElement;
   private width: number;
   private height: number;
-  private gl: WebGLRenderingContext | null = null;
+  private gl: WebGLRenderingContext | WebGL2RenderingContext | null = null;
   private renderer: CubismRenderer_WebGL | null = null;
   private textures: (WebGLTexture | null)[] = [];
   private modelCanvasWidth = 0;
@@ -30,19 +30,25 @@ export class Live2DRenderer {
     this.width = config.width;
     this.height = config.height;
 
-    // 初始化 WebGL
-    const gl =
-      this.canvas.getContext('webgl', {
-        antialias: false,
-        alpha: true,
-        premultipliedAlpha: true,
-        powerPreference: 'low-power',
-      }) ||
-      this.canvas.getContext('experimental-webgl', {
-        antialias: false,
-        alpha: true,
-        premultipliedAlpha: true,
-      }) as WebGLRenderingContext;
+    // 初始化 WebGL (优先使用 WebGL 2)
+    const options: WebGLContextAttributes & {
+      desynchronized?: boolean;
+    } = {
+      antialias: false,
+      alpha: true,
+      depth: false,
+      stencil: false,
+      premultipliedAlpha: true,
+      preserveDrawingBuffer: false,
+      powerPreference: 'high-performance',
+      desynchronized: true,
+    };
+
+    let gl =
+      (this.canvas.getContext('webgl2', options) ||
+        this.canvas.getContext('webgl', options) ||
+        this.canvas.getContext('experimental-webgl', options)) as WebGLRenderingContext | WebGL2RenderingContext | null;
+
     if (!gl) {
       throw new Error('Failed to get WebGL context');
     }
@@ -57,7 +63,10 @@ export class Live2DRenderer {
 
     // 设置视口
     gl.viewport(0, 0, this.width, this.height);
-    this.renderViewport = [0, 0, this.width, this.height];
+    this.renderViewport[0] = 0;
+    this.renderViewport[1] = 0;
+    this.renderViewport[2] = this.width;
+    this.renderViewport[3] = this.height;
 
     // 启用混合
     gl.enable(gl.BLEND);
@@ -73,7 +82,7 @@ export class Live2DRenderer {
       this.modelCanvasHeight = model.getCanvasHeight();
       this.renderer.initialize(model);
       if (this.gl) {
-        this.renderer.startUp(this.gl);
+        this.renderer.startUp(this.gl as WebGLRenderingContext);
       }
       // Cubism WebGL 渲染路径要求使用预乘 Alpha
       this.renderer.setIsPremultipliedAlpha(true);
@@ -113,7 +122,7 @@ export class Live2DRenderer {
 
     if (gl.isContextLost()) return;
 
-    // 避免每帧 getParameter 带来的同步开销，视口在 resize 时维护
+    // 显式传入 Framebuffer
     this.renderer.setRenderState(null as unknown as WebGLFramebuffer, this.renderViewport);
 
     // 清空 Canvas
@@ -123,7 +132,6 @@ export class Live2DRenderer {
     // 渲染模型
     this.renderer.drawModel();
 
-    // 避免每帧 gl.getError() 同步查询
   }
 
   /**
@@ -137,7 +145,10 @@ export class Live2DRenderer {
 
     if (this.gl) {
       this.gl.viewport(0, 0, width, height);
-      this.renderViewport = [0, 0, width, height];
+      this.renderViewport[0] = 0;
+      this.renderViewport[1] = 0;
+      this.renderViewport[2] = width;
+      this.renderViewport[3] = height;
     }
     this.updateMvpMatrix();
   }
@@ -152,7 +163,7 @@ export class Live2DRenderer {
   /**
    * 获取 WebGL 上下文
    */
-  getGl(): WebGLRenderingContext | null {
+  getGl(): WebGLRenderingContext | WebGL2RenderingContext | null {
     return this.gl;
   }
 

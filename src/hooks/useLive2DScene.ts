@@ -3,7 +3,7 @@
  * 每帧从 store 取状态 -> mapping -> lerp -> engine 应用
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Live2DModelLoader,
   Live2DAnimator,
@@ -22,6 +22,8 @@ export interface UseLive2DSceneOptions {
   modelUrl?: string;
   width: number;
   height: number;
+  /** 目标渲染帧率，默认 30 */
+  targetFps?: number;
 }
 
 export function useLive2DScene(options: UseLive2DSceneOptions) {
@@ -46,6 +48,16 @@ export function useLive2DScene(options: UseLive2DSceneOptions) {
   const lastLoopMotionRef = useRef<string | null>(null);
   const wasPlayingRef = useRef(false);
 
+  // ⚡ 性能优化：用 ref 缓存 Store 状态，避免每帧读取
+  const emotionCacheRef = useRef<string>('neutral');
+  const intensityCacheRef = useRef(0);
+  const gestureCacheRef = useRef<string | null>(null);
+  const gestureSeqCacheRef = useRef(0);
+  
+  // ⚡ 性能优化：用于表情脏检查的专用 Ref
+  const lastAppliedEmotionRef = useRef<string | null>(null);
+  const lastAppliedIntensityRef = useRef(-1);
+
   // 鼠标拖拽状态
   const isDraggingRef = useRef(false);
   const lastMouseRef = useRef({ x: 0, y: 0 });
@@ -57,6 +69,17 @@ export function useLive2DScene(options: UseLive2DSceneOptions) {
 
   // 存储可见性变化处理器
   const visibilityHandlerRef = useRef<(() => void) | null>(null);
+
+  // ⚡ 性能优化：订阅 Store 变化，更新 ref（零开销）
+  useEffect(() => {
+    const unsub = useAppStore.subscribe((state) => {
+      emotionCacheRef.current = state.current.emotion;
+      intensityCacheRef.current = state.current.intensity;
+      gestureCacheRef.current = state.current.gesture;
+      gestureSeqCacheRef.current = state.current.gestureSeq;
+    });
+    return unsub;
+  }, []);
 
   // 处理 Electron 本地文件协议
   function resolveModelUrl(url: string): string {
@@ -72,7 +95,8 @@ export function useLive2DScene(options: UseLive2DSceneOptions) {
 
   useEffect(() => {
     let disposed = false;
-    let animationFrameId: number;
+    let animationFrameId = 0;
+    let frameTimerId = 0;
 
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -133,31 +157,46 @@ export function useLive2DScene(options: UseLive2DSceneOptions) {
         let lastTime = performance.now();
         let isPaused = false;
 
-        // 监听页面可见性变化
-        visibilityHandlerRef.current = () => {
-          if (document.hidden) {
-            isPaused = true;
-            if (animationFrameId) {
-              cancelAnimationFrame(animationFrameId);
-              animationFrameId = 0;
-            }
-          } else {
-            isPaused = false;
-            lastTime = performance.now();
-            loop();
+        // ⚡ 性能优化：降帧渲染（默认 30fps）
+        const targetFps = Math.max(1, options.targetFps ?? 30);
+        const frameInterval = 1000 / targetFps;
+        let lastFrameTime = performance.now();
+
+        const clearScheduledFrame = () => {
+          if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+            animationFrameId = 0;
+          }
+          if (frameTimerId) {
+            clearTimeout(frameTimerId);
+            frameTimerId = 0;
           }
         };
 
-        document.addEventListener('visibilitychange', visibilityHandlerRef.current);
+        const scheduleNextFrame = () => {
+          if (isPaused || disposed) return;
 
-        const loop = () => {
-          if (isPaused) return;
+          // 低帧率场景避免每个 VSync 都触发回调，降低 Electron 的空转开销
+          if (targetFps < 60) {
+            const elapsed = performance.now() - lastFrameTime;
+            const delay = Math.max(0, frameInterval - elapsed);
+            frameTimerId = window.setTimeout(() => {
+              frameTimerId = 0;
+              animationFrameId = requestAnimationFrame(loop);
+          // ⚡ 改为在模型加载后启动循环
+            }, delay);
+            return;
+          }
 
           animationFrameId = requestAnimationFrame(loop);
+          // ⚡ 改为在模型加载后启动循环
+        };
 
-          const currentTime = performance.now();
-          const dt = (currentTime - lastTime) / 1000; // 转换为秒
-          lastTime = currentTime;
+        const loop = (timestamp: number) => {
+          if (isPaused || disposed) return;
+          lastFrameTime = timestamp;
+          const dt = Math.min(0.1, Math.max(0, (timestamp - lastTime) / 1000)); // 转换为秒并限制跳帧抖动
+          lastTime = timestamp;
 
           const model = modelRef.current;
           const renderer = rendererRef.current;
@@ -166,7 +205,10 @@ export function useLive2DScene(options: UseLive2DSceneOptions) {
           const physics = physicsRef.current;
           const pose = poseRef.current;
 
-          if (!model || !renderer || !animator || !paramManager) return;
+          if (!model || !renderer || !animator || !paramManager) {
+            // ⚡ 性能优化：没有模型时停止循环，等模型加载后再启动
+            return;
+          }
 
           // 更新动画
           try {
@@ -175,13 +217,11 @@ export function useLive2DScene(options: UseLive2DSceneOptions) {
             console.error('[Live2D] Motion update error:', err);
           }
 
-          // 获取当前状态
-          const current = useAppStore.getState().current;
 
           // 处理手势动作
-          if (current.gestureSeq > lastGestureSeqRef.current && current.gesture) {
-            lastGestureSeqRef.current = current.gestureSeq;
-            const played = animator.play(current.gesture);
+          if (gestureSeqCacheRef.current > lastGestureSeqRef.current && gestureCacheRef.current) {
+            lastGestureSeqRef.current = gestureSeqCacheRef.current;
+            const played = animator.play(gestureCacheRef.current);
             if (played) {
               lastActionNameRef.current = played;
               lastLoopMotionRef.current = played;
@@ -201,11 +241,20 @@ export function useLive2DScene(options: UseLive2DSceneOptions) {
             wasPlayingRef.current = isPlayingNow;
           }
 
-          // 如果没有播放动作，应用表情和呼吸
+          // 如果没有播放动作，应用表情
           if (!animator?.isPlayingMotion()) {
-            paramManager.applyEmotion(current.emotion, current.intensity);
-            paramManager.applyBreathing(performance.now() / 1000, 1);
-            paramManager.applyBlinking(1);
+            // ⚡ 性能优化：仅在表情或强度变化时应用
+            const currentEmotion = emotionCacheRef.current;
+            const currentIntensity = intensityCacheRef.current;
+            
+            if (lastAppliedEmotionRef.current !== currentEmotion || lastAppliedIntensityRef.current !== currentIntensity) {
+                paramManager.applyEmotion(currentEmotion, currentIntensity);
+                lastAppliedEmotionRef.current = currentEmotion;
+                lastAppliedIntensityRef.current = currentIntensity;
+            }
+            
+            // 🚩 已删除 applyBlinking(1) 和 applyBreathing
+            // 只有当参数真正变化时，model.update() 才会产生较小的 CPU 开销
           }
 
           if (physics) {
@@ -225,9 +274,24 @@ export function useLive2DScene(options: UseLive2DSceneOptions) {
             console.error('[Live2D] Render error:', err);
           }
 
+          scheduleNextFrame();
         };
 
-        loop();
+        // 监听页面可见性变化
+        visibilityHandlerRef.current = () => {
+          if (document.hidden) {
+            isPaused = true;
+            clearScheduledFrame();
+          } else {
+            isPaused = false;
+            lastTime = performance.now();
+            lastFrameTime = lastTime;
+            scheduleNextFrame();
+          }
+        };
+
+        document.addEventListener('visibilitychange', visibilityHandlerRef.current);
+        scheduleNextFrame();
 
         // 添加鼠标拖拽事件（仅在 Electron 环境下）
         if (isElectron()) {
@@ -277,10 +341,10 @@ export function useLive2DScene(options: UseLive2DSceneOptions) {
       }
 
       // 取消动画帧
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
-        animationFrameId = 0;
-      }
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+      if (frameTimerId) clearTimeout(frameTimerId);
+      animationFrameId = 0;
+      frameTimerId = 0;
 
       // 清理鼠标拖拽事件
       const handlers = mouseHandlersRef.current;
@@ -318,17 +382,17 @@ export function useLive2DScene(options: UseLive2DSceneOptions) {
     }
   }, [width, height]);
 
-  const playMotion = (name: string) => {
+  const playMotion = useCallback((name: string) => {
     animatorRef.current?.play(name);
-  };
+  }, []);
 
-  const getMotionGroupNames = () => {
+  const getMotionGroupNames = useCallback(() => {
     return animatorRef.current?.getMotionGroupNames() || [];
-  };
+  }, []);
 
-  const playRandomInGroup = (groupName: string) => {
+  const playRandomInGroup = useCallback((groupName: string) => {
     return animatorRef.current?.playRandomInGroup(groupName) || null;
-  };
+  }, []);
 
   return {
     canvasRef,

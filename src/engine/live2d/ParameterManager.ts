@@ -10,6 +10,7 @@ export class ParameterManager {
   private model: CubismModel;
   private idManager: CubismIdManager;
   private parameterMap: Map<string, number> = new Map();
+  private idCache: Map<string, CubismId> = new Map();
 
   // 预定义的表情参数映射
   private static readonly EMOTION_MAP: Record<string, Record<string, number>> = {
@@ -61,10 +62,15 @@ export class ParameterManager {
   }
 
   /**
-   * 获取 CubismId
+   * 获取 CubismId (带缓存优化)
    */
   private getId(name: string): CubismId {
-    return this.idManager.getId(name);
+    let id = this.idCache.get(name);
+    if (!id) {
+      id = this.idManager.getId(name);
+      this.idCache.set(name, id);
+    }
+    return id;
   }
 
   /**
