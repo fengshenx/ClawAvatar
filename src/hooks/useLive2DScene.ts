@@ -20,7 +20,7 @@ import { csmVector } from '@/engine/live2d/type/csmvector';
 import { useAppStore } from '@/app/state';
 import { isElectron } from '@/config';
 
-const DEFAULT_MODEL_URL = '/models/Purple紫';
+const DEFAULT_MODEL_URL = '/models/Hiyori';
 
 export interface UseLive2DSceneOptions {
   modelUrl?: string;

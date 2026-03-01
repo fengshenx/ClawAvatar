@@ -43,4 +43,7 @@ yarn-error.log*
 
 package-lock.json
 tsconfig.tsbuildinfo
-public/models/
+
+# Live2D models
+# Ignore Purple紫 model, but keep Hiyori
+public/models/Purple紫/
