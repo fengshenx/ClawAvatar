@@ -1,0 +1,33 @@
+# 开发文件
+.DS_Store
+*.log
+.env
+.env.local
+.env.*.local
+
+# 源码（打包后会编译到 dist）
+src/
+public/
+Demo/
+docs/
+
+# 开发依赖
+node_modules/
+.git/
+.gitignore
+
+# 构建输出（但保留打包结果）
+dist/electron/
+dist/universal/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.claude/
+
+# 测试
+coverage/
+*.test.ts
+*.test.tsx

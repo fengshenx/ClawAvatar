@@ -1,11 +1,21 @@
 /**
  * 安装 OpenClaw 插件按钮
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export function InstallExtensionButton() {
   const [installing, setInstalling] = useState(false);
   const [result, setResult] = useState<{ success?: boolean; message?: string } | null>(null);
+
+  // 成功提示 5 秒后自动关闭
+  useEffect(() => {
+    if (result?.success) {
+      const timer = setTimeout(() => {
+        setResult(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [result?.success]);
 
   const handleInstall = async () => {
     setInstalling(true);
