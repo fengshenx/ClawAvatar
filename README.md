@@ -2,7 +2,7 @@
 
 ClawAvatar 是 OpenClaw 的 Avatar 前端（Electron + Web 渲染层），通过 WebSocket 实时接收并渲染 LLM 触发的表情/动作。
 
-目前仅支持 macOS。
+支持 **macOS** 和 **Windows**。
 
 ---
 

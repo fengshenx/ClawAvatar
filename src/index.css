@@ -202,3 +202,93 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* 安装插件按钮 */
+.app__install-button {
+  position: absolute;
+  top: 38px;
+  right: 12px;
+  z-index: 30;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+.install-extension {
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: system-ui, -apple-system, sans-serif;
+  transition: all 0.2s;
+}
+
+.install-extension--button {
+  background: rgba(59, 130, 246, 0.9);
+  color: white;
+  border: 1px solid rgba(59, 130, 246, 0.5);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.install-extension--button:hover:not(:disabled) {
+  background: rgba(59, 130, 246, 1);
+  box-shadow: 0 2px 12px rgba(59, 130, 246, 0.5);
+  transform: translateY(-1px);
+}
+
+.install-extension--button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.install-extension--button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.install-extension--success {
+  background: rgba(34, 197, 94, 0.9);
+  color: white;
+  border: 1px solid rgba(34, 197, 94, 0.5);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
+}
+
+.install-extension--error {
+  background: rgba(239, 68, 68, 0.9);
+  color: white;
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+.install-extension__icon {
+  font-size: 14px;
+}
+
+.install-extension__text {
+  flex: 1;
+  font-size: 12px;
+}
+
+.install-extension__retry {
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.install-extension__retry:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.install-extension__retry:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
