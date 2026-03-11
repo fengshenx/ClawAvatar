@@ -5,6 +5,7 @@
 import { useState, useEffect } from 'react';
 import { useLive2DScene } from '@/hooks/useLive2DScene';
 import { AvatarStatusIndicator } from '@/ui/AvatarStatusIndicator';
+import { InstallExtensionButton } from '@/ui/InstallExtensionButton';
 import { useElectronAvatarPlugin } from '@/hooks/useElectronAvatarPlugin';
 
 function useWindowSize() {
@@ -19,6 +20,15 @@ function useWindowSize() {
 
 function App() {
   const { width, height } = useWindowSize();
+  const [extensionInstalled, setExtensionInstalled] = useState<boolean | null>(null);
+
+  // 检查插件是否已安装
+  useEffect(() => {
+    if (window.avatarBridge?.checkExtensionInstalled) {
+      window.avatarBridge.checkExtensionInstalled().then(setExtensionInstalled);
+    }
+  }, []);
+
   const {
     canvasRef,
     loading,
@@ -63,6 +73,9 @@ function App() {
             <p className="app__hint">请查看终端日志</p>
           </div>
         )}
+        <div className="app__install-button">
+          {extensionInstalled === false && <InstallExtensionButton />}
+        </div>
       </div>
     </div>
   );

@@ -338,6 +338,89 @@ ipcMain.handle('avatar:pluginClearPairing', async () => {
   return avatarPluginClient.getStatus();
 });
 
+// 检查插件是否已安装
+ipcMain.handle('avatar:checkExtensionInstalled', async () => {
+  const fs = await import('fs');
+  const path = await import('path');
+  const os = await import('os');
+
+  const homeDir = os.homedir();
+  const targetDir = path.join(homeDir, '.openclaw/extensions/avatar');
+
+  return fs.existsSync(targetDir);
+});
+
+// 安装插件到 OpenClaw
+ipcMain.handle('avatar:installExtension', async () => {
+  const { execSync } = await import('child_process');
+  const fs = await import('fs');
+  const path = await import('path');
+  const os = await import('os');
+
+  try {
+    // 插件源路径（打包在 app 内）
+    const extensionSource = path.join(__dirname, '../extensions/avatar');
+
+    // 目标路径（跨平台）
+    const homeDir = os.homedir();
+    const targetDir = path.join(homeDir, '.openclaw/extensions/avatar');
+
+    // 检查插件是否存在
+    if (!fs.existsSync(extensionSource)) {
+      return {
+        success: false,
+        error: '插件文件不存在，请确保使用的是打包版本。',
+      };
+    }
+
+    // 创建目标目录
+    fs.mkdirSync(path.dirname(targetDir), { recursive: true });
+
+    // 如果已存在，先删除
+    if (fs.existsSync(targetDir)) {
+      fs.rmSync(targetDir, { recursive: true, force: true });
+    }
+
+    // 复制插件文件
+    fs.cpSync(extensionSource, targetDir, { recursive: true });
+
+    // 安装依赖（如果 package.json 存在）
+    const packageJsonPath = path.join(targetDir, 'package.json');
+    if (fs.existsSync(packageJsonPath)) {
+      try {
+        execSync('npm install', { cwd: targetDir, stdio: 'pipe' });
+      } catch (err) {
+        console.log('Warning: npm install failed, but continuing...', err.message);
+      }
+    }
+
+    // 尝试启用插件（如果 openclaw CLI 在 PATH 中）
+    try {
+      execSync('openclaw plugins install ' + targetDir, { stdio: 'pipe' });
+      execSync('openclaw plugins enable avatar', { stdio: 'pipe' });
+    } catch (err) {
+      // openclaw CLI 可能不在 PATH 中
+      return {
+        success: true,
+        message: '插件已安装！请手动运行：openclaw plugins enable avatar',
+        targetDir,
+        needsManualEnable: true,
+      };
+    }
+
+    return {
+      success: true,
+      message: '✅ 插件安装成功！请重启 OpenClaw Gateway。',
+      targetDir,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.message,
+    };
+  }
+});
+
 ipcMain.handle('electron:getOptions', () => ({
   alwaysOnTop,
   clickThrough,
