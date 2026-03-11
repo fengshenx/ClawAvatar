@@ -76,6 +76,20 @@ Live2D 渲染 (useLive2DScene.ts)
 
 ## 🚀 安装与运行
 
+### ⭐ 简化安装（打包版本）
+
+如果你使用的是 ClawAvatar 打包后的应用（.dmg / .exe），安装非常简便：
+
+1. **下载并运行 ClawAvatar**
+2. **自动安装插件**：应用会自动将插件安装到 `~/.openclaw/extensions/avatar`
+3. **启动 OpenClaw Gateway**（如果未运行）
+4. **重启 Gateway**：运行 `openclaw gateway restart` 使插件生效
+5. **自动连接**：ClawAvatar 会自动尝试连接并显示状态
+
+> 提示：插件未安装时，应用右上角会显示「📦 安装 OpenClaw 插件」按钮，点击即可一键安装。
+
+---
+
 ### 方式 1：生产环境（正式 profile）
 
 #### 安装插件
