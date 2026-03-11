@@ -244,8 +244,23 @@ export function useElectronAvatarPlugin(
       applyMessage(msg);
     });
 
+    // 用于跟踪上一次连接状态
+    let lastPhase = 'idle';
     const offStatus = window.avatarBridge.onPluginStatus((next) => {
       if (!disposed) {
+        const currentPhase = next.phase ?? 'idle';
+
+        // 插件断开时自动重连（从 connected 变为 idle/error）
+        if (lastPhase === 'connected' && (currentPhase === 'idle' || currentPhase === 'error')) {
+          // 延迟重连，避免频繁重连
+          setTimeout(() => {
+            if (!disposed) {
+              window.avatarBridge?.connectPlugin().catch(() => undefined);
+            }
+          }, 2000);
+        }
+        lastPhase = currentPhase;
+
         setStatus((prev) => {
           const merged = { ...prev, ...next };
           return samePluginStatus(prev, merged) ? prev : merged;

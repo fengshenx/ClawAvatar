@@ -402,7 +402,7 @@ ipcMain.handle('avatar:installExtension', async () => {
       // openclaw CLI 可能不在 PATH 中
       return {
         success: true,
-        message: '插件已安装！请手动运行：openclaw plugins enable avatar',
+        message: '插件已安装！请运行：openclaw gateway restart',
         targetDir,
         needsManualEnable: true,
       };
@@ -410,7 +410,7 @@ ipcMain.handle('avatar:installExtension', async () => {
 
     return {
       success: true,
-      message: '✅ 插件安装成功！请重启 OpenClaw Gateway。',
+      message: '✅ 插件安装成功！请运行：openclaw gateway restart',
       targetDir,
     };
   } catch (error) {
