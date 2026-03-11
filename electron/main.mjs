@@ -350,12 +350,18 @@ ipcMain.handle('avatar:checkExtensionInstalled', async () => {
   return fs.existsSync(targetDir);
 });
 
-// 安装插件到 OpenClaw
-ipcMain.handle('avatar:installExtension', async () => {
-  const { execSync } = await import('child_process');
+// 安装插件到 OpenClaw（异步，不阻塞UI）
+ipcMain.handle('avatar:installExtension', async (event) => {
+  const { exec } = await import('child_process');
   const fs = await import('fs');
   const path = await import('path');
   const os = await import('os');
+
+  const sendProgress = (progress) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('avatar:installProgress', progress);
+    }
+  };
 
   try {
     // 插件源路径（打包在 app 内）
@@ -367,19 +373,26 @@ ipcMain.handle('avatar:installExtension', async () => {
 
     // 检查插件是否存在
     if (!fs.existsSync(extensionSource)) {
+      sendProgress({ status: 'error', message: '插件文件不存在，请确保使用的是打包版本。' });
       return {
         success: false,
         error: '插件文件不存在，请确保使用的是打包版本。',
       };
     }
 
+    sendProgress({ status: 'progress', message: '正在创建目标目录...', progress: 10 });
+
     // 创建目标目录
     fs.mkdirSync(path.dirname(targetDir), { recursive: true });
+
+    sendProgress({ status: 'progress', message: '正在删除旧版本...', progress: 20 });
 
     // 如果已存在，先删除
     if (fs.existsSync(targetDir)) {
       fs.rmSync(targetDir, { recursive: true, force: true });
     }
+
+    sendProgress({ status: 'progress', message: '正在复制插件文件...', progress: 40 });
 
     // 复制插件文件
     fs.cpSync(extensionSource, targetDir, { recursive: true });
@@ -387,18 +400,32 @@ ipcMain.handle('avatar:installExtension', async () => {
     // 安装依赖（如果 package.json 存在）
     const packageJsonPath = path.join(targetDir, 'package.json');
     if (fs.existsSync(packageJsonPath)) {
-      try {
-        execSync('npm install', { cwd: targetDir, stdio: 'pipe' });
-      } catch (err) {
-        console.log('Warning: npm install failed, but continuing...', err.message);
-      }
+      sendProgress({ status: 'progress', message: '正在安装依赖...', progress: 60 });
+
+      await new Promise((resolve, reject) => {
+        exec('npm install', { cwd: targetDir, stdio: 'pipe' }, (error, stdout, stderr) => {
+          if (error) {
+            console.log('Warning: npm install failed, but continuing...', error.message);
+          }
+          resolve();
+        });
+      });
     }
 
+    sendProgress({ status: 'progress', message: '正在启用插件...', progress: 80 });
+
     // 尝试启用插件（如果 openclaw CLI 在 PATH 中）
-    try {
-      execSync('openclaw plugins install ' + targetDir, { stdio: 'pipe' });
-      execSync('openclaw plugins enable avatar', { stdio: 'pipe' });
-    } catch (err) {
+    const enableResult = await new Promise((resolve) => {
+      exec('openclaw plugins install ' + targetDir, { stdio: 'pipe' }, (error1, stdout1, stderr1) => {
+        exec('openclaw plugins enable avatar', { stdio: 'pipe' }, (error2, stdout2, stderr2) => {
+          resolve({ error1, error2 });
+        });
+      });
+    });
+
+    sendProgress({ status: 'progress', message: '安装完成！', progress: 100 });
+
+    if (enableResult.error1 || enableResult.error2) {
       // openclaw CLI 可能不在 PATH 中
       return {
         success: true,
@@ -414,6 +441,7 @@ ipcMain.handle('avatar:installExtension', async () => {
       targetDir,
     };
   } catch (error) {
+    sendProgress({ status: 'error', message: error.message });
     return {
       success: false,
       error: error.message,

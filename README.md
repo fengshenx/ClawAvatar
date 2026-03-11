@@ -6,6 +6,31 @@ ClawAvatar 是 OpenClaw 的 Avatar 前端（Electron + Web 渲染层），通过
 
 ---
 
+## ⭐ 快速开始（支持 macOS / Windows）
+
+1. **安装依赖**
+   ```bash
+   npm install
+   ```
+
+2. **启动 ClawAvatar**
+   ```bash
+   npm run dev:electron
+   ```
+
+3. **安装插件**：应用右上角会显示「📦 安装 OpenClaw 插件」按钮，点击安装
+
+4. **重启 Gateway**
+   ```bash
+   openclaw gateway restart
+   ```
+
+5. **检查连接状态**：左下角状态指示灯变绿表示连接成功（红色表示未连接）
+
+6. **测试 Avatar 能力**：在聊天框输入 `openclaw avatar有哪些能力`，看看输出结果
+
+---
+
 ## 📌 核心特性
 
 - **实时通信**：基于 WebSocket（WS），实时接收 OpenClaw Gateway 的表情/动作事件
@@ -76,38 +101,11 @@ Live2D 渲染 (useLive2DScene.ts)
 
 ## 🚀 安装与运行
 
-### ⭐ 快速开始
-
-1. **启动 ClawAvatar**
-   ```bash
-   npm run dev:electron
-   ```
-
-2. **安装插件**：应用右上角会显示「📦 安装 OpenClaw 插件」按钮，点击安装
-
-3. **重启 Gateway**
-   ```bash
-   openclaw gateway restart
-   ```
-
-4. **自动连接**：ClawAvatar 会自动连接 OpenClaw Gateway
-
----
-
 ### 方式 1：生产环境（正式 profile）
 
-#### 安装插件
+#### 安装插件（推荐方式：UI 按钮）
 
-```bash
-# 安装 avatar 插件
-openclaw plugins install /abs/path/to/extensions/avatar
-
-# 启用插件
-openclaw plugins enable avatar
-
-# 重启 Gateway
-openclaw gateway restart
-```
+启动 ClawAvatar 后，点击右上角的「📦 安装 OpenClaw 插件」按钮即可自动安装。
 
 #### 验证插件
 

@@ -40,6 +40,7 @@ export interface AvatarBridge {
     targetDir?: string;
   }>;
   checkExtensionInstalled: () => Promise<boolean>;
+  onInstallProgress: (handler: (payload: { status: 'progress' | 'error' | 'success'; message: string; progress?: number }) => void) => () => void;
   onPluginEvent: (handler: (payload: unknown) => void) => (() => void);
   onPluginStatus: (handler: (payload: unknown) => void) => (() => void);
 }

@@ -29,6 +29,18 @@ function App() {
     }
   }, []);
 
+  // 监听安装进度，安装成功后延迟重新检查安装状态
+  useEffect(() => {
+    const cleanup = window.avatarBridge?.onInstallProgress?.((data) => {
+      if (data.status === 'success') {
+        setTimeout(() => {
+          window.avatarBridge?.checkExtensionInstalled?.().then(setExtensionInstalled);
+        }, 2000);
+      }
+    });
+    return cleanup;
+  }, []);
+
   const {
     canvasRef,
     loading,

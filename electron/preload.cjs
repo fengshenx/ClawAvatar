@@ -31,6 +31,11 @@ contextBridge.exposeInMainWorld('avatarBridge', {
   clearPluginPairing: () => ipcRenderer.invoke('avatar:pluginClearPairing'),
   installExtension: () => ipcRenderer.invoke('avatar:installExtension'),
   checkExtensionInstalled: () => ipcRenderer.invoke('avatar:checkExtensionInstalled'),
+  onInstallProgress: (handler) => {
+    const wrapped = (_event, payload) => handler(payload);
+    ipcRenderer.on('avatar:installProgress', wrapped);
+    return () => ipcRenderer.removeListener('avatar:installProgress', wrapped);
+  },
   onPluginEvent: (handler) => {
     const wrapped = (_event, payload) => handler(payload);
     ipcRenderer.on('avatar:pluginEvent', wrapped);
